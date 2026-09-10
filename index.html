@@ -132,9 +132,12 @@
             animation: caustic-flow 9s ease-in-out infinite alternate;
         }
         @keyframes caustic-flow {
-            0% { background-position: 0 0, 0 0, 0 0; filter: blur(2px); }
-            50% { background-position: 140px 70px, -90px 100px, 45px 35px; filter: blur(3.5px); }
-            100% { background-position: 280px 150px, -180px 180px, 90px 80px; filter: blur(2.5px); }
+            0% { background-position: 0 0, 0 0, 0 0; }
+            50% { background-position: 140px 70px, -90px 100px, 45px 35px; }
+            100% { background-position: 280px 150px, -180px 180px, 90px 80px; }
+        }
+        #caustics-layer {
+            filter: blur(2px);
         }
 
         /* ===== Поверхность воды ===== */
@@ -208,7 +211,7 @@
         .jellyfish {
             position: absolute;
             font-size: 40px;
-            filter: drop-shadow(0 0 16px #00f2fe) drop-shadow(0 0 30px #a855f7);
+            filter: drop-shadow(0 0 12px #00f2fe);
             opacity: 0.85;
             animation: jelly-float 5.5s ease-in-out infinite alternate;
             pointer-events: none;
@@ -216,7 +219,7 @@
         }
         @keyframes jelly-float {
             0% { transform: translateY(0) scaleY(1) scaleX(1); }
-            50% { transform: translateY(-40px) scaleY(1.18) scaleX(0.88); filter: drop-shadow(0 0 24px #00f2fe) drop-shadow(0 0 40px #ec4899); }
+            50% { transform: translateY(-40px) scaleY(1.18) scaleX(0.88); }
             100% { transform: translateY(-12px) scaleY(0.94) scaleX(1.06); }
         }
 
@@ -254,6 +257,21 @@
             0% { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.45)); }
             100% { filter: drop-shadow(0 0 24px rgba(255, 215, 0, 0.95)) brightness(1.25); }
         }
+
+        /* ===== Снижение нагрузки на слабых мобильных устройствах ===== */
+        body.low-end .distant-leviathan,
+        body.low-end .distant-submarine,
+        body.low-end .bg-fish { animation: none; opacity: 0.06; }
+        body.low-end .jellyfish { filter: none; }
+        body.low-end .treasure-glow { animation: none; filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4)); }
+        body.low-end .light-ray { display: none; }
+        body.low-end #caustics-layer { opacity: 0.08; filter: none; }
+        body.low-end .surface-glare { filter: none; }
+        body.low-end .bubble,
+        body.low-end .glint { display: none; }
+        body.low-end .kraken-boss { filter: none; animation: none; }
+        body.low-end .baby-shark-svg { filter: none; }
+        body.low-end .seabed-item { filter: none; }
 
         /* ===== Золотая Лихорадка (Gold Rush) ===== */
         #goldrush-overlay {
@@ -2048,6 +2066,9 @@
         const bossBarFill = document.getElementById('boss-bar-fill');
 
         const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        // Слабые мобильные устройства: мало ядер/памяти -> снижаем нагрузку на GPU/DOM
+        const isLowEnd = isTouchDevice && ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4);
+        document.body.classList.toggle('low-end', isLowEnd);
 
         const WORLD_W = 6000;
         const WORLD_H = 4000;
@@ -2408,7 +2429,7 @@
         }
 
         function spawnBiteParticles(x, y, size) {
-            const count = 16;
+            const count = isLowEnd ? 8 : 16;
             const colors = ['#ff2233', '#d6001c', '#ff5252', '#800010', '#ffffff'];
             for (let i = 0; i < count; i++) {
                 const p = document.createElement('div');
@@ -2470,7 +2491,7 @@
         }
 
         function spawnCoinFountain(x, y) {
-            const count = 14;
+            const count = isLowEnd ? 8 : 14;
             for (let i = 0; i < count; i++) {
                 const c = document.createElement('div');
                 c.className = 'meat-chunk';
@@ -2785,8 +2806,9 @@
         }
 
         function spawnWorldDecor() {
+            const d = isLowEnd ? 0.45 : 1;
             const algaClasses = ['alga', 'alga', 'alga', 'alga-kelp', 'alga-red'];
-            for (let i = 0; i < 160; i++) {
+            for (let i = 0; i < Math.round(160 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const bias = Math.pow(Math.random(), 1.6);
                 const y = (WORLD_H * 0.3) + bias * (WORLD_H * 0.7);
@@ -2794,7 +2816,7 @@
                 const cls = algaClasses[Math.floor(Math.random() * algaClasses.length)];
                 spawnDecorElement(cls, x, y, { w: 8, h, delay: Math.random() * 4, zo: 1 });
             }
-            for (let i = 0; i < 70; i++) {
+            for (let i = 0; i < Math.round(70 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const y = WORLD_H * 0.6 + Math.pow(Math.random(), 1.3) * WORLD_H * 0.4;
                 const s = 25 + Math.random() * 55;
@@ -2802,21 +2824,21 @@
                 spawnDecorElement(cls, x, y, { w: s, h: s * 0.7, zo: 1 });
             }
             const coralClasses = ['coral coral-red', 'coral coral-pink', 'coral coral-purple', 'coral coral-orange'];
-            for (let i = 0; i < 44; i++) {
+            for (let i = 0; i < Math.round(44 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const y = WORLD_H * 0.5 + Math.random() * WORLD_H * 0.5;
                 const s = 30 + Math.random() * 40;
                 const cls = coralClasses[Math.floor(Math.random() * coralClasses.length)];
                 spawnDecorElement(cls, x, y, { w: s, h: s * 0.8, zo: 2 });
             }
-            for (let i = 0; i < 70; i++) {
+            for (let i = 0; i < Math.round(70 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const y = Math.random() * WORLD_H * 0.55;
                 const h = 180 + Math.random() * 320;
                 spawnDecorElement('light-ray', x, y, { w: 60 + Math.random() * 90, h, zo: 1 });
             }
             const bgTypes = ['🐟', '🐠', '🐡', '🐙', '🐠', '🐬', '🦞'];
-            for (let i = 0; i < 50; i++) {
+            for (let i = 0; i < Math.round(50 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const y = Math.random() * WORLD_H;
                 const el = spawnDecorElement('bg-fish', x, y, {
@@ -2826,7 +2848,7 @@
             }
 
             // Светящиеся глубоководные медузы
-            for (let i = 0; i < 14; i++) {
+            for (let i = 0; i < Math.round(14 * d); i++) {
                 const x = 100 + Math.random() * (WORLD_W - 200);
                 const y = 1800 + Math.random() * 1800;
                 const jelly = spawnDecorElement('jellyfish', x, y, { zo: 2, delay: Math.random() * 5 });
@@ -2834,7 +2856,7 @@
             }
 
             // Морской снег / планктон
-            for (let i = 0; i < 65; i++) {
+            for (let i = 0; i < Math.round(65 * d); i++) {
                 const x = Math.random() * WORLD_W;
                 const y = 400 + Math.random() * (WORLD_H - 600);
                 const s = 2 + Math.random() * 3.5;
@@ -2872,7 +2894,7 @@
 
         function spawnPrey() {
             if (isGameOver || !gameStarted || isPaused) return;
-            if (preys.length > 50) return;
+            if (preys.length > (isLowEnd ? 28 : 50)) return;
             const prey = document.createElement('div');
             prey.className = 'prey';
             prey.innerText = preyTypes[Math.floor(Math.random() * preyTypes.length)];
