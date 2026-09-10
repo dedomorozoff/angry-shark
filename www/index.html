@@ -13,7 +13,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             width: 100vw;
             height: 100dvh;
-            background: linear-gradient(to bottom, #5bcaff 0%, #2a8fc9 45%, #175d9e 85%, #0e3b6b 100%);
+            background: #020524;
             touch-action: none;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -32,12 +32,241 @@
             z-index: 1;
         }
 
+        /* ===== Океан с зонированием глубины ===== */
         #ocean {
             position: relative;
             width: 6000px;
             height: 4000px;
             will-change: transform;
-            background: radial-gradient(ellipse at center top, #7ecdf5 0%, #1a6ea8 55%, #0b3a6b 100%);
+            background: linear-gradient(to bottom,
+                #50d4f2 0%,      /* 0px: Яркая солнечная лагуна */
+                #0ea5e9 12%,     /* 480px: Прозрачный лазурный верхний слой */
+                #0284c7 24%,     /* 960px: Солнечный коралловый риф */
+                #0369a1 38%,     /* 1520px: Насыщенный глубокий синий */
+                #075985 52%,     /* 2080px: Темнеющий океан */
+                #0c4a6e 68%,     /* 2720px: Сумеречный риф */
+                #082f49 82%,     /* 3280px: Глубоководная бездна */
+                #031728 92%,     /* 3680px: Придонная тьма */
+                #1a1912 100%     /* 4000px: Песчаное морское дно */
+            );
+        }
+
+        /* ===== Параллакс-слой дальнего плана (0.4x) ===== */
+        #parallax-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6000px;
+            height: 4000px;
+            pointer-events: none;
+            z-index: 0;
+            will-change: transform;
+        }
+
+        .distant-mountains {
+            position: absolute;
+            bottom: 180px;
+            left: 0;
+            width: 6000px;
+            height: 600px;
+            pointer-events: none;
+        }
+
+        .distant-leviathan {
+            position: absolute;
+            left: 700px;
+            top: 1200px;
+            font-size: 160px;
+            opacity: 0.16;
+            filter: blur(3px) grayscale(0.8);
+            animation: distant-whale-swim 150s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes distant-whale-swim {
+            0% { transform: translateX(-500px) scaleX(1); }
+            50% { transform: translateX(3800px) scaleX(1); }
+            50.01% { transform: translateX(3800px) scaleX(-1); }
+            100% { transform: translateX(-500px) scaleX(-1); }
+        }
+
+        .distant-submarine {
+            position: absolute;
+            left: 3200px;
+            top: 2100px;
+            font-size: 100px;
+            opacity: 0.17;
+            filter: blur(3.5px) brightness(0.65);
+            animation: distant-sub-swim 170s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes distant-sub-swim {
+            0% { transform: translateX(1000px) scaleX(-1); }
+            100% { transform: translateX(-3500px) scaleX(-1); }
+        }
+
+        .distant-ruins {
+            position: absolute;
+            left: 2100px;
+            bottom: 260px;
+            font-size: 150px;
+            opacity: 0.22;
+            filter: blur(2.5px) grayscale(0.75);
+            pointer-events: none;
+        }
+
+        /* ===== Анимированная каустика (игра света на воде) ===== */
+        #caustics-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6000px;
+            height: 1800px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.22;
+            background:
+                radial-gradient(ellipse at 25% 30%, rgba(255,255,255,0.7) 0%, transparent 45%),
+                radial-gradient(ellipse at 75% 65%, rgba(255,255,255,0.5) 0%, transparent 50%),
+                repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0 2px, transparent 2px 28px);
+            background-size: 420px 280px, 480px 340px, 220px 220px;
+            animation: caustic-flow 9s ease-in-out infinite alternate;
+        }
+        @keyframes caustic-flow {
+            0% {
+                background-position: 0 0, 0 0, 0 0;
+                filter: blur(2px);
+            }
+            50% {
+                background-position: 140px 70px, -90px 100px, 45px 35px;
+                filter: blur(3.5px);
+            }
+            100% {
+                background-position: 280px 150px, -180px 180px, 90px 80px;
+                filter: blur(2.5px);
+            }
+        }
+
+        /* ===== Линия водной глади наверху ===== */
+        #surface-water {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6000px;
+            height: 90px;
+            pointer-events: none;
+            z-index: 3;
+            overflow: hidden;
+        }
+        .surface-sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 35px;
+            background: linear-gradient(to bottom, #7dd3fc 0%, #bae6fd 60%, rgba(255,255,255,0.95) 100%);
+            box-shadow: 0 2px 20px rgba(255, 255, 255, 0.9);
+        }
+        .surface-waves {
+            position: absolute;
+            top: 25px;
+            left: 0;
+            width: 6000px;
+            height: 35px;
+        }
+        .wave-path-1 {
+            fill: rgba(255, 255, 255, 0.45);
+            animation: wave-slide 5s linear infinite;
+        }
+        .wave-path-2 {
+            fill: rgba(125, 211, 252, 0.6);
+            animation: wave-slide 7s linear infinite reverse;
+        }
+        @keyframes wave-slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-300px); }
+        }
+        .surface-glare {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.65), transparent);
+            filter: blur(3px);
+        }
+
+        /* ===== Песчаное дно с рельефом на глубине ===== */
+        #seabed {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 6000px;
+            height: 260px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .seabed-sand {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 6000px;
+            height: 260px;
+        }
+
+        /* ===== Светящиеся медузы в глубине ===== */
+        .jellyfish {
+            position: absolute;
+            font-size: 40px;
+            filter: drop-shadow(0 0 16px #00f2fe) drop-shadow(0 0 30px #a855f7);
+            opacity: 0.85;
+            animation: jelly-float 5.5s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 2;
+        }
+        @keyframes jelly-float {
+            0% {
+                transform: translateY(0) scaleY(1) scaleX(1);
+            }
+            50% {
+                transform: translateY(-40px) scaleY(1.18) scaleX(0.88);
+                filter: drop-shadow(0 0 24px #00f2fe) drop-shadow(0 0 40px #ec4899);
+            }
+            100% {
+                transform: translateY(-12px) scaleY(0.94) scaleX(1.06);
+            }
+        }
+
+        /* ===== Морской снег / планктон ===== */
+        .marine-snow {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(220, 245, 255, 0.7);
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.75);
+            pointer-events: none;
+            z-index: 2;
+            animation: snow-drift linear infinite;
+        }
+        @keyframes snow-drift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            20% { opacity: 0.75; }
+            80% { opacity: 0.75; }
+            100% { transform: translateY(-340px) translateX(45px); opacity: 0; }
+        }
+
+        /* ===== Затонувшие сокровища и якоря на дне ===== */
+        .seabed-item {
+            position: absolute;
+            font-size: 44px;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.85));
+            pointer-events: none;
+            z-index: 3;
+        }
+        .treasure-glow {
+            animation: treasure-sparkle 3s ease-in-out infinite alternate;
+        }
+        @keyframes treasure-sparkle {
+            0% { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.45)); }
+            100% { filter: drop-shadow(0 0 24px rgba(255, 215, 0, 0.95)) brightness(1.25); }
         }
 
         /* ===== Игровой интерфейс (HUD) ===== */
@@ -245,7 +474,6 @@
             filter: brightness(1.2);
         }
 
-        /* Показываем турбо-кнопку на сенсорных устройствах */
         @media (hover: none) and (pointer: coarse) {
             #boost-btn { display: flex; }
         }
@@ -297,7 +525,6 @@
             50% { transform: rotate(12deg); }
         }
 
-        /* Обычный укус рыбки */
         .bite-anim {
             animation: bite-scale 0.2s ease-in-out;
         }
@@ -307,7 +534,6 @@
             100% { transform: scale(1); }
         }
 
-        /* Мощный укус соперника / крупного врага */
         .heavy-bite-anim {
             animation: heavy-bite-anim 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         }
@@ -321,7 +547,6 @@
             100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35)); }
         }
 
-        /* Защитный щит вокруг акулы */
         .shield-aura {
             position: absolute;
             border-radius: 50%;
@@ -385,7 +610,6 @@
             100% { transform: translate(-50%, 0) scale(1.18); box-shadow: 0 0 8px #ff2244; }
         }
 
-        /* Анимация крушения и разрывания соперника */
         .rival-crunching {
             animation: rival-crunch-anim 0.38s ease-out forwards !important;
             pointer-events: none !important;
@@ -405,7 +629,6 @@
             }
         }
 
-        /* Кровавые брызги при поедании соперника */
         .blood-particle {
             position: absolute;
             border-radius: 50%;
@@ -414,7 +637,6 @@
             will-change: transform, opacity;
         }
 
-        /* Разлетающиеся кусочки добычи/кости */
         .meat-chunk {
             position: absolute;
             pointer-events: none;
@@ -422,7 +644,6 @@
             will-change: transform, opacity;
         }
 
-        /* Ударная волна укуса */
         .shockwave-ring {
             position: absolute;
             border-radius: 50%;
@@ -438,7 +659,6 @@
             100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
         }
 
-        /* Всплывающий текст очков и бонусов */
         .floating-text {
             position: absolute;
             font-weight: 900;
@@ -462,7 +682,6 @@
             100% { transform: translate(-50%, -75px) scale(1); opacity: 0; }
         }
 
-        /* Пузырьки турбо-ускорения */
         .boost-bubble {
             position: absolute;
             border-radius: 50%;
@@ -477,7 +696,6 @@
             100% { transform: scale(2.4); opacity: 0; }
         }
 
-        /* Бонусные сферы в океане */
         .powerup-item {
             position: absolute;
             width: 46px;
@@ -499,7 +717,6 @@
             100% { transform: translateY(-12px) scale(1.1); box-shadow: 0 0 25px rgba(0,220,255,1); }
         }
 
-        /* Тряска экрана */
         @keyframes screen-shake-anim {
             0%, 100% { transform: translate(0, 0); }
             20% { transform: translate(-6px, 5px); }
@@ -629,16 +846,16 @@
 
         .light-ray {
             position: absolute;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0));
+            background: linear-gradient(to bottom, rgba(255,255,255,0.48), rgba(255,255,255,0));
             filter: blur(1.5px);
             clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
             animation: shimmer 4s infinite ease-in-out;
-            z-index: 0;
+            z-index: 1;
         }
 
         @keyframes shimmer {
             0%, 100% { opacity: 0.2; }
-            50% { opacity: 0.65; }
+            50% { opacity: 0.7; }
         }
 
         .glint {
@@ -649,11 +866,12 @@
             filter: blur(0.4px);
             border-radius: 2px;
             animation: glint-fall 4s linear infinite;
-            z-index: 0;
+            z-index: 1;
         }
 
         @keyframes glint-fall {
             0% { transform: translateY(0) rotate(15deg); opacity: 0; }
+            10% { opacity: 0.8; }
             100% { transform: translateY(120vh) rotate(15deg); opacity: 0; }
         }
 
@@ -1012,12 +1230,10 @@
             pointer-events: none;
         }
 
-        /* Показываем джойстик только для тач-устройств */
         @media (hover: none) and (pointer: coarse) {
             #joystick-zone { display: block; }
         }
 
-        /* Экран-ориентация: landscape на мобильных */
         @media (max-height: 420px) and (orientation: landscape) {
             #minimap {
                 width: 90px;
@@ -1124,6 +1340,49 @@
 
     <!-- Океан -->
     <div id="ocean">
+        <!-- Параллакс-слой дальнего плана (движется с 0.4x скоростью камеры) -->
+        <div id="parallax-container">
+            <svg class="distant-mountains" viewBox="0 0 6000 600" preserveAspectRatio="none">
+                <path d="M0 430 Q500 280 1000 450 T2000 320 T3000 460 T4000 300 T5000 440 T6000 380 L6000 600 L0 600 Z" fill="#011028" opacity="0.5"/>
+                <path d="M0 480 Q600 380 1200 500 T2400 400 T3600 520 T4800 380 T6000 460 L6000 600 L0 600 Z" fill="#000814" opacity="0.65"/>
+            </svg>
+            <div class="distant-leviathan">🐋</div>
+            <div class="distant-submarine">🛸</div>
+            <div class="distant-ruins">🏛️</div>
+        </div>
+
+        <!-- Каустика: солнечные блики в верхних слоях -->
+        <div id="caustics-layer"></div>
+
+        <!-- Линия водной глади наверху океана -->
+        <div id="surface-water">
+            <div class="surface-sky"></div>
+            <svg class="surface-waves" viewBox="0 0 1200 40" preserveAspectRatio="none">
+                <path class="wave-path-1" d="M0 25 Q150 8 300 25 T600 25 T900 25 T1200 25 L1200 40 L0 40 Z"/>
+                <path class="wave-path-2" d="M0 18 Q150 32 300 18 T600 18 T900 18 T1200 18 L1200 40 L0 40 Z"/>
+            </svg>
+            <div class="surface-glare"></div>
+        </div>
+
+        <!-- Песчаное дно с рельефом на глубине 3800-4000px -->
+        <div id="seabed">
+            <svg class="seabed-sand" viewBox="0 0 6000 260" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="sandGradFront" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#b8935c"/>
+                        <stop offset="40%" stop-color="#7a5d34"/>
+                        <stop offset="100%" stop-color="#342511"/>
+                    </linearGradient>
+                    <linearGradient id="sandGradBack" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#8c6f42"/>
+                        <stop offset="100%" stop-color="#241a0b"/>
+                    </linearGradient>
+                </defs>
+                <path d="M0 110 Q400 35 900 100 T1800 45 T2700 115 T3600 55 T4500 105 T5400 50 T6000 95 L6000 260 L0 260 Z" fill="url(#sandGradBack)" opacity="0.8"/>
+                <path d="M0 140 Q350 75 750 130 T1550 80 T2350 145 T3150 90 T3950 135 T4750 85 T5550 130 T6000 110 L6000 260 L0 260 Z" fill="url(#sandGradFront)"/>
+            </svg>
+        </div>
+
         <!-- Щит акулы -->
         <div id="shield-aura" class="shield-aura"></div>
 
@@ -1225,7 +1484,6 @@
                 this.init();
                 if (!this.ctx) return;
                 const t = this.ctx.currentTime;
-                // Низкочастотный удар укуса
                 const osc = this.ctx.createOscillator();
                 const oscGain = this.ctx.createGain();
                 osc.type = 'sawtooth';
@@ -1238,7 +1496,6 @@
                 osc.start(t);
                 osc.stop(t + 0.28);
 
-                // Хруст костей и разрыв воды
                 const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -1265,7 +1522,6 @@
                 this.init();
                 if (!this.ctx) return;
                 const t = this.ctx.currentTime;
-                // Гулкий подводный саб-бас
                 const osc = this.ctx.createOscillator();
                 const oscGain = this.ctx.createGain();
                 osc.type = 'sine';
@@ -1277,7 +1533,7 @@
                 oscGain.connect(this.ctx.destination);
                 osc.start(t);
                 osc.stop(t + 0.6);
-                // Взрывной шум
+
                 const bufferSize = Math.floor(this.ctx.sampleRate * 0.5);
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -1378,6 +1634,7 @@
         const sharkContainer = document.getElementById('shark-container');
         const sharkBody = document.getElementById('shark-body');
         const ocean = document.getElementById('ocean');
+        const parallaxContainer = document.getElementById('parallax-container');
         const sharkLabel = document.getElementById('shark-label');
         const shieldEl = document.getElementById('shield-aura');
         const gameOverScreen = document.getElementById('game-over');
@@ -1401,14 +1658,12 @@
         const minimapViewport = document.getElementById('minimap-viewport');
         const minimapShark = document.getElementById('minimap-shark');
 
-        // Тач-режим
         const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
         const WORLD_W = 6000;
         const WORLD_H = 4000;
         const CAM_MAX_SPEED = 14;
 
-        // Состояние игры
         let score = 0;
         let sharkSize = 60;
         let posX = WORLD_W / 2;
@@ -1424,27 +1679,22 @@
         let isPaused = false;
         let gameStarted = false;
 
-        // Статистика сессии
         let preyEaten = 0;
         let rivalsEaten = 0;
         let maxSizeAchieved = 60;
 
-        // Турбо-ускорение (Boost)
         let boostEnergy = 100;
         let isBoosting = false;
         let boostKeyDown = false;
 
-        // Бонусы
         let shieldActive = false;
         let magnetTimer = 0;
         let frenzyTimer = 0;
 
-        // Рекорд
         let bestScore = parseInt(localStorage.getItem('sharkBestScore') || '0', 10);
         bestValEl.innerText = bestScore;
         soundBtn.innerText = Sound.muted ? '🔇' : '🔊';
 
-        // Эволюция акулы
         const EVOLUTIONS = [
             { minSize: 0, title: 'Малёк 🐟', next: 85 },
             { minSize: 85, title: 'Рифовая акула 🦈', next: 140 },
@@ -1454,7 +1704,6 @@
         ];
         let currentEvoIndex = 0;
 
-        // Джойстик
         let joystickActive = false;
         let joystickTouchId = null;
         let joystickCenterX = 0;
@@ -1469,7 +1718,6 @@
         const rivals = [];
         const powerups = [];
 
-        // === Обработка звука и паузы ===
         soundBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isMuted = Sound.toggleMute();
@@ -1494,7 +1742,6 @@
             togglePause();
         });
 
-        // === Турбо-ускорение (Спринт) ===
         function setBoost(state) {
             boostKeyDown = state;
             if (state) boostBtn.classList.add('active');
@@ -1525,7 +1772,6 @@
         });
         document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        // Мобильная кнопка турбо
         boostBtn.addEventListener('touchstart', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -1538,7 +1784,6 @@
         }, { passive: false });
         boostBtn.addEventListener('touchcancel', () => setBoost(false));
 
-        // === Ввод: мышь ===
         document.addEventListener('mousemove', (e) => {
             mouseScreenX = e.clientX;
             mouseScreenY = e.clientY;
@@ -1546,7 +1791,6 @@
             targetY = e.clientY + worldY;
         });
 
-        // === Ввод: тач-джойстик ===
         function onJoystickStart(e) {
             if (isGameOver || isPaused) return;
             const touch = e.changedTouches[0];
@@ -1607,7 +1851,6 @@
             joystickZone.addEventListener('touchcancel', onJoystickEnd, { passive: false });
 
             document.addEventListener('touchstart', (e) => {
-                // Игнорируем тачи по кнопкам интерфейса
                 if (e.target.closest('#ui, #boost-btn, #start-screen, #game-over, #pause-overlay, #minimap')) return;
                 if (!joystickActive && !isGameOver && !isPaused) {
                     onJoystickStart(e);
@@ -1620,7 +1863,6 @@
             document.addEventListener('touchcancel', onJoystickEnd, { passive: false });
         }
 
-        // === Визуальные эффекты и анимации ===
         function triggerBite() {
             if (isBiting) return;
             isBiting = true;
@@ -1705,7 +1947,6 @@
                 setTimeout(() => p.remove(), dur + 40);
             }
 
-            // Кусочки мяса и кости
             const meats = ['🥩', '🍖', '🦴', '💥'];
             for (let i = 0; i < 4; i++) {
                 const m = document.createElement('div');
@@ -1748,7 +1989,6 @@
             setTimeout(() => b.remove(), 650);
         }
 
-        // === Обновление интерфейса и эволюции ===
         function updateHUD(scoreGained = 0) {
             scoreValEl.innerText = score;
             if (scoreGained > 0) {
@@ -1765,7 +2005,6 @@
             maxSizeAchieved = Math.max(maxSizeAchieved, Math.floor(sharkSize));
             sharkLabel.innerText = Math.floor(sharkSize);
 
-            // Прогресс эволюции
             const currentEvo = EVOLUTIONS[currentEvoIndex];
             const nextEvo = EVOLUTIONS[currentEvoIndex + 1];
             if (nextEvo) {
@@ -1815,7 +2054,6 @@
             }
         }
 
-        // === Спавн элементов ===
         function randomSpawnPoint(margin = 300) {
             const x0 = Math.max(0, worldX - margin);
             const x1 = Math.min(WORLD_W, worldX + window.innerWidth + margin);
@@ -1871,7 +2109,7 @@
                 const x = Math.random() * WORLD_W;
                 const y = Math.random() * WORLD_H * 0.55;
                 const h = 180 + Math.random() * 320;
-                spawnDecorElement('light-ray', x, y, { w: 60 + Math.random() * 90, h, zo: 0 });
+                spawnDecorElement('light-ray', x, y, { w: 60 + Math.random() * 90, h, zo: 1 });
             }
             const bgTypes = ['🐟', '🐠', '🐡', '🐙', '🐠', '🐬', '🦞'];
             for (let i = 0; i < 50; i++) {
@@ -1881,6 +2119,49 @@
                     w: 12 + Math.random() * 10, zo: 0, delay: Math.random() * 6
                 });
                 el.innerText = bgTypes[Math.floor(Math.random() * bgTypes.length)];
+            }
+
+            // Светящиеся глубоководные медузы (глубина 1800 - 3600px)
+            for (let i = 0; i < 14; i++) {
+                const x = 100 + Math.random() * (WORLD_W - 200);
+                const y = 1800 + Math.random() * 1800;
+                const jelly = spawnDecorElement('jellyfish', x, y, { zo: 2, delay: Math.random() * 5 });
+                jelly.innerText = '🪼';
+            }
+
+            // Морской снег / планктон
+            for (let i = 0; i < 65; i++) {
+                const x = Math.random() * WORLD_W;
+                const y = 400 + Math.random() * (WORLD_H - 600);
+                const s = 2 + Math.random() * 3.5;
+                const snow = spawnDecorElement('marine-snow', x, y, {
+                    w: s, h: s, delay: Math.random() * 15, zo: 1
+                });
+                snow.style.animationDuration = (12 + Math.random() * 14) + 's';
+            }
+
+            // Сокровища и затонувшие артефакты на дне (глубина 3800 - 3920px)
+            const seabedTreasures = ['🪙', '📦', '👑', '💎', '🏺'];
+            for (let i = 0; i < 12; i++) {
+                const x = 150 + (i * (WORLD_W / 12)) + (Math.random() - 0.5) * 250;
+                const y = 3840 + Math.random() * 60;
+                const item = spawnDecorElement('seabed-item treasure-glow', x, y, { zo: 3 });
+                item.innerText = seabedTreasures[Math.floor(Math.random() * seabedTreasures.length)];
+            }
+
+            // Затонувшие якоря и морские звёзды на дне
+            for (let i = 0; i < 8; i++) {
+                const x = 300 + Math.random() * (WORLD_W - 600);
+                const y = 3850 + Math.random() * 60;
+                const anchor = spawnDecorElement('seabed-item', x, y, { zo: 3 });
+                anchor.innerText = '⚓';
+            }
+            for (let i = 0; i < 15; i++) {
+                const x = 100 + Math.random() * (WORLD_W - 200);
+                const y = 3860 + Math.random() * 70;
+                const star = spawnDecorElement('seabed-item', x, y, { zo: 3 });
+                star.innerText = '⭐';
+                star.style.fontSize = (22 + Math.random() * 14) + 'px';
             }
         }
 
@@ -1966,42 +2247,29 @@
             });
         }
 
-        // Поедание соперника игроком с яркой анимацией
         function devourRival(r, index) {
             if (r.dying) return;
             r.dying = true;
 
-            // Звук сочного хруста
             Sound.playCrunch();
-
-            // Анимация мощного броска и укуса
             triggerHeavyBite();
-
-            // Тряска экрана
             triggerScreenShake(8, 280);
 
-            // Всплывающий яркий текст
             const pts = frenzyTimer > 0 ? 200 : 100;
             createFloatingText(`ХРУМ! +${pts} 🦈`, r.x, r.y, true);
 
-            // Ударная волна укуса
             spawnShockwave(r.x, r.y);
-
-            // Кровавые брызги и разлетающиеся куски
             spawnBiteParticles(r.x, r.y, r.size);
 
-            // Анимация разрывания элемента соперника
             r.element.classList.add('rival-crunching');
             if (r.label) r.label.style.display = 'none';
 
-            // Начисление очков и рост
             score += pts;
             rivalsEaten++;
             sharkSize = Math.min(600, sharkSize + 8);
             updateHUD(pts);
             checkEvolution();
 
-            // Окончательное удаление через 380мс
             setTimeout(() => {
                 if (r.element && r.element.parentNode) r.element.remove();
                 if (r.label && r.label.parentNode) r.label.remove();
@@ -2017,12 +2285,10 @@
 
                 const distToShark = Math.hypot(posX - r.x, posY - r.y);
 
-                // Индикатор опасности соперника для игрока
                 const isDangerous = r.size > sharkSize * 1.1;
                 if (isDangerous) {
                     r.label.classList.add('danger');
                     r.label.innerText = '⚠️ ' + Math.floor(r.size);
-                    // Опасный соперник может преследовать игрока, если подобрался близко
                     if (distToShark < 340) {
                         const chaseX = posX - r.x;
                         const chaseY = posY - r.y;
@@ -2033,7 +2299,6 @@
                 } else {
                     r.label.classList.remove('danger');
                     r.label.innerText = Math.floor(r.size);
-                    // Если соперник меньше — убегает от игрока
                     if (distToShark < Math.min(sharkSize, 220) + r.size * 1.5) {
                         const runX = r.x - posX;
                         const runY = r.y - posY;
@@ -2043,7 +2308,6 @@
                     }
                 }
 
-                // Поиск ближайшей рыбки-добычи
                 let nearestPrey = null;
                 let nearestDist = Infinity;
                 for (const p of preys) {
@@ -2077,7 +2341,6 @@
                 r.label.style.left = `${r.x}px`;
                 r.label.style.top = `${r.y + r.size * 0.58}px`;
 
-                // Соперник поедает рыбок
                 for (let j = preys.length - 1; j >= 0; j--) {
                     const p = preys[j];
                     if (Math.hypot(r.x - p.x, r.y - p.y) < (r.size / 2 + 14)) {
@@ -2090,13 +2353,10 @@
                     }
                 }
 
-                // Взаимодействие игрока с соперником
                 if (distToShark < (sharkSize * 0.45 + r.size * 0.3)) {
                     if (frenzyTimer > 0 || !isDangerous) {
-                        // Игрок съедает соперника!
                         devourRival(r, i);
                     } else {
-                        // Опасный гигантский соперник нападает на игрока!
                         if (shieldActive) {
                             shieldActive = false;
                             updateBuffsHUD();
@@ -2206,7 +2466,6 @@
             const scaleX = mmW / WORLD_W;
             const scaleY = mmH / WORLD_H;
 
-            // Видимая область камеры
             const vw = (window.innerWidth / WORLD_W) * mmW;
             const vh = (window.innerHeight / WORLD_H) * mmH;
             const vx = worldX * scaleX;
@@ -2216,11 +2475,9 @@
             minimapViewport.style.width = vw + 'px';
             minimapViewport.style.height = vh + 'px';
 
-            // Акула
             minimapShark.style.left = (posX * scaleX - 2) + 'px';
             minimapShark.style.top = (posY * scaleY - 2) + 'px';
 
-            // Рыбки
             while (minimapPreyEls.length < preys.length) {
                 const d = document.createElement('div');
                 d.className = 'minimap-prey';
@@ -2235,7 +2492,6 @@
                 minimapPreyEls[i].style.top = (preys[i].y * scaleY) + 'px';
             }
 
-            // Враги
             while (minimapEnemyEls.length < enemies.length) {
                 const d = document.createElement('div');
                 d.className = 'minimap-enemy';
@@ -2250,7 +2506,6 @@
                 minimapEnemyEls[i].style.top = (enemies[i].y * scaleY) + 'px';
             }
 
-            // Соперники
             while (minimapRivalEls.length < rivals.length) {
                 const d = document.createElement('div');
                 d.className = 'minimap-rival';
@@ -2276,7 +2531,6 @@
             const dt = Math.min(0.1, (now - lastTimestamp) / 1000);
             lastTimestamp = now;
 
-            // Турбо-ускорение (Stamina)
             if (boostKeyDown && boostEnergy > 4) {
                 isBoosting = true;
                 boostEnergy = Math.max(0, boostEnergy - 32 * dt);
@@ -2287,10 +2541,8 @@
             }
             staminaBarFill.style.width = boostEnergy + '%';
 
-            // Расчёт скорости акулы
             const speedMultiplier = (isBoosting ? 1.75 : 1.0) * (frenzyTimer > 0 ? 1.25 : 1.0);
 
-            // Камера и позиционирование
             if (joystickActive) {
                 const moveSpeed = 5 * speedMultiplier;
                 posX += joystickDX * moveSpeed;
@@ -2309,19 +2561,17 @@
                 posX += (targetX - posX) * ease;
                 posY += (targetY - posY) * ease;
 
-                // Плавное следование камеры за акулой на ПК
                 const targetCamX = posX - window.innerWidth / 2;
                 const targetCamY = posY - window.innerHeight / 2;
                 worldX += (targetCamX - worldX) * 0.08;
                 worldY += (targetCamY - worldY) * 0.08;
-                worldX = Math.min(Math.max(worldX, 0), Math.max(0, WORLD_W - window.innerWidth));
-                worldY = Math.min(Math.max(worldY, 0), Math.max(0, WORLD_H - window.innerHeight));
+                worldX = Math.min(Math.max(worldX, 0), WORLD_W - window.innerWidth);
+                worldY = Math.min(Math.max(worldY, 0), WORLD_H - window.innerHeight);
             }
 
             posX = Math.min(Math.max(posX, 20), WORLD_W - 20);
             posY = Math.min(Math.max(posY, 20), WORLD_H - 20);
 
-            // Поворот акулы с предотвращением переворота вверх тормашками (scaleY)
             const dx = targetX - posX;
             const dy = targetY - posY;
             let angle;
@@ -2336,6 +2586,11 @@
             const isFacingLeft = Math.abs(angle) > 90;
 
             ocean.style.transform = `translate(${-worldX}px, ${-worldY}px)`;
+
+            // Параллакс дальнего плана
+            if (parallaxContainer) {
+                parallaxContainer.style.transform = `translate(${worldX * 0.6}px, ${worldY * 0.6}px)`;
+            }
 
             sharkContainer.style.left = `${posX - currentW / 2}px`;
             sharkContainer.style.top = `${posY - currentH / 2}px`;
@@ -2352,7 +2607,6 @@
             sharkLabel.style.left = `${posX}px`;
             sharkLabel.style.top = `${posY + currentH * 0.62}px`;
 
-            // Щит вокруг акулы
             if (shieldActive) {
                 shieldEl.style.display = 'block';
                 shieldEl.style.left = posX + 'px';
@@ -2363,7 +2617,6 @@
                 shieldEl.style.display = 'none';
             }
 
-            // Шлейф пузырьков при турбо
             if (isBoosting && Math.random() < 0.6) {
                 const rad = angle * (Math.PI / 180);
                 const tailX = posX - Math.cos(rad) * (currentW * 0.45);
@@ -2371,7 +2624,6 @@
                 spawnBoostBubble(tailX, tailY);
             }
 
-            // Действие магнита: притягиваем рыбок
             if (magnetTimer > 0) {
                 for (const p of preys) {
                     const mdx = posX - p.x;
@@ -2384,7 +2636,6 @@
                 }
             }
 
-            // === Обработка добычи ===
             for (let i = preys.length - 1; i >= 0; i--) {
                 const p = preys[i];
                 const distToShark = Math.hypot(posX - p.x, posY - p.y);
@@ -2425,7 +2676,6 @@
                 }
             }
 
-            // === Обработка врагов ===
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
                 const distToShark = Math.hypot(posX - e.x, posY - e.y);
@@ -2502,7 +2752,6 @@
                             endGame(`Вас проглотил опасный обитатель глубин ${e.element.innerText}!`);
                             return;
                         } else {
-                            // Игрок съедает крупного врага!
                             Sound.playCrunch();
                             triggerHeavyBite();
                             triggerScreenShake(7, 260);
@@ -2524,7 +2773,6 @@
             updateRivals();
             updatePowerups(dt);
 
-            // Мини-карта
             minimapFrame++;
             if (minimapFrame % 3 === 0) updateMinimap();
 
@@ -2548,7 +2796,6 @@
             gameOverScreen.style.display = 'flex';
         }
 
-        // Чистый перезапуск без мерцания и перезагрузки страницы
         function restartGame() {
             isGameOver = false;
             gameOverScreen.style.display = 'none';
@@ -2568,7 +2815,6 @@
             rankBarFill.style.width = '0%';
             staminaBarFill.style.width = '100%';
 
-            // Очистка сущностей
             for (const p of preys) p.element.remove();
             preys.length = 0;
             for (const e of enemies) e.element.remove();
@@ -2581,7 +2827,6 @@
             for (const pu of powerups) pu.element.remove();
             powerups.length = 0;
 
-            // Позиции
             posX = WORLD_W / 2;
             posY = WORLD_H / 2;
             targetX = posX;
