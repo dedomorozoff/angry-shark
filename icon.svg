@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a6ea8"/>
+      <stop offset="100%" stop-color="#0d3d6b"/>
+    </linearGradient>
+    <linearGradient id="sharkBodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a6fa5"/>
+      <stop offset="55%" stop-color="#6f92bd"/>
+      <stop offset="100%" stop-color="#9fbcd9"/>
+    </linearGradient>
+    <linearGradient id="sharkBellyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d7e4f0"/>
+      <stop offset="100%" stop-color="#f4f8fb"/>
+    </linearGradient>
+    <linearGradient id="finGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d5f8f"/>
+      <stop offset="100%" stop-color="#6f92bd"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
+  <!-- Shark group centered and scaled -->
+  <g transform="translate(106, 176) scale(2.5)">
+    <!-- Tail -->
+    <path d="M18 35 Q6 15 0 30 Q8 38 0 52 Q6 55 18 42 Z" fill="url(#finGrad)" stroke="#2f4a70" stroke-width="0.8"/>
+    <path d="M18 35 Q10 28 6 30 Q12 35 18 38 Z" fill="#8fb2d4"/>
+    <!-- Dorsal fin -->
+    <path d="M55 26 Q62 2 74 22 Z" fill="url(#finGrad)" stroke="#2f4a70" stroke-width="0.8"/>
+    <!-- Bottom fin -->
+    <path d="M55 46 Q48 60 40 58 Q50 52 52 44 Z" fill="url(#finGrad)" stroke="#2f4a70" stroke-width="0.8"/>
+    <!-- Small fin -->
+    <path d="M35 48 Q30 56 26 54 Q33 50 34 46 Z" fill="url(#finGrad)"/>
+    <!-- Body -->
+    <path d="M20 35 Q40 14 78 18 Q100 22 112 30 Q118 34 112 38 Q98 44 78 46 Q40 52 20 35 Z"
+          fill="url(#sharkBodyGrad)" stroke="#2f4a70" stroke-width="1"/>
+    <!-- Belly -->
+    <path d="M38 44 Q70 44 96 36 Q102 38 96 39 Q78 46 38 46 Z" fill="url(#sharkBellyGrad)"/>
+    <!-- Gills -->
+    <path d="M62 28 Q60 32 62 36" stroke="#3a5b8a" stroke-width="1.2" fill="none"/>
+    <path d="M67 27 Q65 32 67 37" stroke="#3a5b8a" stroke-width="1.2" fill="none"/>
+    <path d="M72 26 Q70 31 72 36" stroke="#3a5b8a" stroke-width="1.2" fill="none"/>
+    <!-- Eye -->
+    <circle cx="92" cy="27" r="4.5" fill="#ffffff" stroke="#1a2e4a" stroke-width="0.8"/>
+    <circle cx="93" cy="27" r="2.4" fill="#101820"/>
+    <circle cx="94" cy="26" r="0.8" fill="#ffffff"/>
+    <!-- Mouth -->
+    <path d="M100 34 Q108 36 114 34 Q108 41 100 34 Z" fill="#7a2b2b"/>
+    <!-- Teeth -->
+    <path d="M101 34 L103 39 L104 34 Z" fill="#ffffff"/>
+    <path d="M105 34.5 L107 40 L108 34.5 Z" fill="#ffffff"/>
+    <path d="M109 34.5 L110 38.5 L112 34.5 Z" fill="#ffffff"/>
+    <!-- Nose highlight -->
+    <ellipse cx="112" cy="31" rx="3" ry="2" fill="rgba(255,255,255,0.35)"/>
+  </g>
+</svg>

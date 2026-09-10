@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Игра: Голодная Акула</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            width: 100vw;
+            height: 100dvh;
+            background: linear-gradient(to bottom, #5bcaff 0%, #2a8fc9 45%, #175d9e 85%, #0e3b6b 100%);
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #water-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 50%),
+                repeating-radial-gradient(circle, rgba(255,255,255,0.03) 0 1px, transparent 1px 3px),
+                repeating-radial-gradient(circle, rgba(0,0,0,0.03) 0 1px, transparent 1px 3px);
+            background-size: 200% 200%, 80px 80px, 80px 80px;
+            z-index: 1;
+        }
+
+        #ocean {
+            position: relative;
+            width: 6000px;
+            height: 4000px;
+            will-change: transform;
+            background: radial-gradient(ellipse at center top, #7ecdf5 0%, #1a6ea8 55%, #0b3a6b 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: max(10px, env(safe-area-inset-top, 10px));
+            left: 10px;
+            right: 10px;
+            color: white;
+            font-size: clamp(14px, 3.5vw, 24px);
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            display: none;
+            gap: 4px 12px;
+            align-items: center;
+        }
+
+        .shark-container {
+            position: absolute;
+            user-select: none;
+            z-index: 10;
+            will-change: transform, left, top;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .shark-svg {
+            width: 100px;
+            height: 60px;
+            will-change: transform;
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .shark-label {
+            position: absolute;
+            font-size: clamp(10px, 2.5vw, 13px);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.5);
+            padding: 1px 6px;
+            border-radius: 9px;
+            pointer-events: none;
+            white-space: nowrap;
+            transform: translate(-50%, 0);
+            will-change: left, top;
+        }
+
+        .tail {
+            animation: tail-wag 0.6s infinite ease-in-out;
+            transform-origin: 30px 30px;
+        }
+
+        @keyframes tail-wag {
+            0%, 100% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        .bite-anim {
+            animation: bite-scale 0.2s ease-in-out;
+        }
+
+        @keyframes bite-scale {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .prey, .enemy {
+            position: absolute;
+            user-select: none;
+            transition: transform 0.1s linear;
+            display: inline-block;
+        }
+
+        .prey { font-size: 30px; animation: fish-swim 0.8s infinite ease-in-out; }
+        .enemy { font-size: 50px; z-index: 5; animation: fish-swim 1.2s infinite ease-in-out; }
+
+        .rival {
+            position: absolute;
+            z-index: 8;
+            will-change: transform, left, top;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .rival-label {
+            position: absolute;
+            font-size: clamp(9px, 2vw, 11px);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.45);
+            padding: 1px 4px;
+            border-radius: 8px;
+            pointer-events: none;
+            white-space: nowrap;
+            transform: translate(-50%, 0);
+            will-change: left, top;
+        }
+
+        @keyframes fish-swim {
+            0%, 100% { transform: rotate(0deg) scaleX(1); }
+            50% { transform: rotate(10deg) scaleX(0.9); }
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: rise 5s infinite ease-in;
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        /* ===== Морское дно и декор ===== */
+        .alga {
+            position: absolute;
+            width: 9px;
+            transform-origin: 50% 100%;
+            animation: sway 3.6s ease-in-out infinite;
+            background: linear-gradient(to right, #14572e 0%, #2f9e52 55%, #5ede8a 100%);
+            border-radius: 6px 6px 3px 3px;
+            box-shadow:
+                inset -2px -4px 8px rgba(0,0,0,0.35),
+                inset 2px 1px 3px rgba(255,255,255,0.22);
+            --leaf-a: #43c76d;
+            --leaf-b: #1d7a42;
+        }
+        .alga-kelp {
+            background: linear-gradient(to right, #17704f 0%, #35ba84 55%, #63e8b2 100%);
+            --leaf-a: #3fd393;
+            --leaf-b: #177a50;
+        }
+        .alga-red {
+            background: linear-gradient(to right, #6b2240 0%, #af3e68 55%, #ee7ba4 100%);
+            --leaf-a: #e76f94;
+            --leaf-b: #8a2f50;
+        }
+        .alga::before, .alga::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .alga::before {
+            top: -10px;
+            width: 24px;
+            height: 36px;
+            border-radius: 55% 45% 45% 40%;
+            background: radial-gradient(circle at 40% 35%, var(--leaf-a), var(--leaf-b));
+            box-shadow: inset -3px -5px 9px rgba(0,0,0,0.28);
+        }
+        .alga::after {
+            top: -32px;
+            width: 17px;
+            height: 27px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, var(--leaf-a), var(--leaf-b));
+            box-shadow: inset -2px -4px 7px rgba(0,0,0,0.24);
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(-9deg); }
+            50% { transform: rotate(9deg); }
+        }
+
+        .rock {
+            position: absolute;
+            border-radius: 50% 55% 45% 50% / 55% 45% 55% 45%;
+            background:
+                radial-gradient(circle at 32% 28%, #c5b394, transparent 60%),
+                radial-gradient(circle at 62% 76%, #2c251b, transparent 72%),
+                linear-gradient(160deg, #9c8d70 0%, #574c39 100%);
+            box-shadow:
+                inset -6px -9px 14px rgba(0,0,0,0.5),
+                0 5px 10px rgba(0,0,0,0.3);
+        }
+        .rock-moss {
+            background:
+                radial-gradient(ellipse at 28% 20%, rgba(103,176,106,0.85), transparent 55%),
+                radial-gradient(ellipse at 70% 92%, rgba(47,96,48,0.7), transparent 60%),
+                radial-gradient(circle at 32% 28%, #c5b394, transparent 60%),
+                linear-gradient(160deg, #9c8d70 0%, #574c39 100%);
+        }
+
+        .coral {
+            position: absolute;
+            border-radius: 45% 55% 50% 50%;
+            box-shadow: inset 0 -6px 12px rgba(0,0,0,0.35);
+            animation: coral-pulse 5s infinite ease-in-out;
+        }
+        .coral::before, .coral::after {
+            content: '';
+            position: absolute;
+            top: 62%;
+            width: 55%;
+            height: 40%;
+            border-radius: 100% 0 100% 0;
+            background: inherit;
+            filter: brightness(0.9);
+        }
+        .coral::before { left: -30%; transform: rotate(22deg); }
+        .coral::after  { right: -30%; transform: rotate(-22deg) scaleX(-1); }
+
+        .coral-red    { background: radial-gradient(circle at 40% 30%, #ff9c85, #c24228); }
+        .coral-pink   { background: radial-gradient(circle at 40% 30%, #ff9fd6, #cc3f8a); }
+        .coral-purple { background: radial-gradient(circle at 40% 30%, #c79aff, #7f3fc9); }
+        .coral-orange { background: radial-gradient(circle at 40% 30%, #ffc37a, #c9702a); }
+
+        @keyframes coral-pulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .light-ray {
+            position: absolute;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0));
+            filter: blur(1.5px);
+            clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+            animation: shimmer 4s infinite ease-in-out;
+            z-index: 0;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.65; }
+        }
+
+        .glint {
+            position: absolute;
+            width: 2px;
+            height: 60px;
+            background: rgba(255,255,255,0.7);
+            filter: blur(0.4px);
+            border-radius: 2px;
+            animation: glint-fall 4s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes glint-fall {
+            0% { transform: translateY(0) rotate(15deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            100% { transform: translateY(120vh) rotate(15deg); opacity: 0; }
+        }
+
+        .bg-fish {
+            position: absolute;
+            font-size: 13px;
+            opacity: 0.32;
+            filter: grayscale(0.6) blur(0.6px);
+            animation: bg-swim 6s infinite ease-in-out;
+        }
+
+        @keyframes bg-swim {
+            0%, 100% { transform: translateX(-25px) scaleX(1); }
+            50% { transform: translateX(25px) scaleX(0.9); }
+        }
+
+        #game-over {
+            position: absolute;
+            inset: 0;
+            display: none;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: clamp(24px, 6vw, 48px);
+            text-align: center;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+        #game-over .restart-hint {
+            font-size: clamp(12px, 3vw, 24px);
+        }
+
+        /* ===== Стартовая заставка ===== */
+        #start-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #0a2a4a 0%, #0d3d6b 40%, #175d9e 70%, #1a6ea8 100%);
+            cursor: pointer;
+            gap: clamp(10px, 3vh, 30px);
+        }
+        #start-screen::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(100,200,255,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 70%, rgba(0,80,160,0.2) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        #start-screen .title {
+            font-size: clamp(32px, 8vw, 72px);
+            font-weight: bold;
+            color: #fff;
+            text-shadow:
+                0 0 20px rgba(80,180,255,0.6),
+                0 0 60px rgba(40,120,220,0.3),
+                3px 3px 6px rgba(0,0,0,0.5);
+            text-align: center;
+            line-height: 1.1;
+            animation: title-float 3s ease-in-out infinite;
+            position: relative;
+        }
+        #start-screen .subtitle {
+            font-size: clamp(14px, 3vw, 22px);
+            color: rgba(200, 230, 255, 0.7);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            animation: title-float 3s ease-in-out infinite;
+            animation-delay: 0.3s;
+        }
+        #start-screen .shark-emoji {
+            font-size: clamp(60px, 16vw, 120px);
+            animation: shark-swim-in 2s ease-out forwards, title-float 3s ease-in-out infinite 2s;
+            filter: drop-shadow(0 0 15px rgba(80,180,255,0.4));
+        }
+        #start-screen .start-btn {
+            font-size: clamp(16px, 4vw, 28px);
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #1a6ea8 0%, #2a8fc9 50%, #5bcaff 100%);
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: clamp(10px, 2.5vw, 18px) clamp(30px, 6vw, 60px);
+            border-radius: 50px;
+            cursor: pointer;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            box-shadow:
+                0 4px 20px rgba(42,143,201,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            transition: transform 0.15s, box-shadow 0.15s;
+            animation: title-float 3s ease-in-out infinite;
+            animation-delay: 0.6s;
+            position: relative;
+            z-index: 1;
+        }
+        #start-screen .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow:
+                0 6px 30px rgba(42,143,201,0.7),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        #start-screen .start-btn:active {
+            transform: scale(0.97);
+        }
+
+        @keyframes title-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes shark-swim-in {
+            0% { transform: translateX(-120vw) rotate(-5deg); opacity: 0; }
+            60% { transform: translateX(10px) rotate(2deg); opacity: 1; }
+            80% { transform: translateX(-5px) rotate(-1deg); }
+            100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+        /* Пузырьки на заставке */
+        .start-bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+            animation: start-bubble-rise linear forwards;
+        }
+        @keyframes start-bubble-rise {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 0.6; }
+            100% { transform: translateY(-110vh) scale(1); opacity: 0; }
+        }
+
+        /* ===== Джойстик (только на тач-устройствах) ===== */
+        #joystick-zone {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40vh;
+            z-index: 50;
+            display: none;
+            pointer-events: none;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: clamp(100px, 28vw, 160px);
+            height: clamp(100px, 28vw, 160px);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            display: none;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        #joystick-thumb {
+            position: absolute;
+            width: clamp(40px, 12vw, 60px);
+            height: clamp(40px, 12vw, 60px);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            display: none;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ===== Мини-карта ===== */
+        #minimap {
+            position: absolute;
+            bottom: max(12px, env(safe-area-inset-bottom, 12px));
+            right: 12px;
+            width: clamp(80px, 18vw, 140px);
+            height: clamp(55px, 12vw, 95px);
+            background: rgba(0, 30, 80, 0.55);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            z-index: 100;
+            pointer-events: none;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        #minimap-viewport {
+            position: absolute;
+            border: 1.5px solid rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+        #minimap-shark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #4fc3f7;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #4fc3f7;
+            pointer-events: none;
+        }
+        .minimap-prey {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(150, 220, 100, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .minimap-enemy {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 80, 80, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Показываем джойстик только для тач-устройств */
+        @media (hover: none) and (pointer: coarse) {
+            #joystick-zone { display: block; }
+        }
+
+        /* Экран-ориентация: landscape на мобильных */
+        @media (max-height: 420px) and (orientation: landscape) {
+            #minimap {
+                width: 90px;
+                height: 60px;
+                bottom: 5px;
+                right: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="shark-emoji">🦈</div>
+        <div class="title">Голодная Акула</div>
+        <div class="subtitle">Стань самым большим хищником океана</div>
+        <button class="start-btn" id="start-btn">ИГРАТЬ</button>
+
+    </div>
+
+    <div id="game-over" onclick="location.reload()">
+        ИГРА ОКОНЧЕНА!
+        <div class="restart-hint">Нажми, чтобы начать заново</div>
+    </div>
+    <div id="water-layer"></div>
+
+    <div id="ocean">
+        <div id="shark-container" class="shark-container">
+            <svg id="shark-body" class="shark-svg" viewBox="0 0 120 70">
+                <defs>
+                    <linearGradient id="sharkBodyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#4a6fa5"/>
+                        <stop offset="55%" stop-color="#6f92bd"/>
+                        <stop offset="100%" stop-color="#9fbcd9"/>
+                    </linearGradient>
+                    <linearGradient id="sharkBellyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d7e4f0"/>
+                        <stop offset="100%" stop-color="#f4f8fb"/>
+                    </linearGradient>
+                    <linearGradient id="finGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#3d5f8f"/>
+                        <stop offset="100%" stop-color="#6f92bd"/>
+                    </linearGradient>
+                </defs>
+                <g class="tail">
+                    <path d="M18 35 Q6 15 0 30 Q8 38 0 52 Q6 55 18 42 Z"
+                          fill="url(#finGrad)" stroke="#2f4a70" stroke-width="1"/>
+                    <path d="M18 35 Q10 28 6 30 Q12 35 18 38 Z" fill="#8fb2d4"/>
+                </g>
+                <path d="M55 26 Q62 2 74 22 Z" fill="url(#finGrad)" stroke="#2f4a70" stroke-width="1"/>
+                <path d="M55 46 Q48 60 40 58 Q50 52 52 44 Z"
+                      fill="url(#finGrad)" stroke="#2f4a70" stroke-width="1"/>
+                <path d="M35 48 Q30 56 26 54 Q33 50 34 46 Z" fill="url(#finGrad)"/>
+                <path d="M20 35 Q40 14 78 18 Q100 22 112 30 Q118 34 112 38 Q98 44 78 46 Q40 52 20 35 Z"
+                      fill="url(#sharkBodyGrad)" stroke="#2f4a70" stroke-width="1.5"/>
+                <path d="M38 44 Q70 44 96 36 Q102 38 96 39 Q78 46 38 46 Z"
+                      fill="url(#sharkBellyGrad)"/>
+                <path d="M62 28 Q60 32 62 36" stroke="#3a5b8a" stroke-width="1.5" fill="none"/>
+                <path d="M67 27 Q65 32 67 37" stroke="#3a5b8a" stroke-width="1.5" fill="none"/>
+                <path d="M72 26 Q70 31 72 36" stroke="#3a5b8a" stroke-width="1.5" fill="none"/>
+                <circle cx="92" cy="27" r="5" fill="#ffffff" stroke="#1a2e4a" stroke-width="1"/>
+                <circle cx="93" cy="27" r="2.6" fill="#101820"/>
+                <circle cx="94" cy="26" r="0.9" fill="#ffffff"/>
+                <path d="M100 34 Q108 36 114 34 Q108 41 100 34 Z" fill="#7a2b2b"/>
+                <path d="M101 34 L103 39 L104 34 Z" fill="#ffffff"/>
+                <path d="M105 34.5 L107 40 L108 34.5 Z" fill="#ffffff"/>
+                <path d="M109 34.5 L110 38.5 L112 34.5 Z" fill="#ffffff"/>
+                <ellipse cx="112" cy="31" rx="3" ry="2" fill="rgba(255,255,255,0.35)"/>
+            </svg>
+        </div>
+        <div id="shark-label" class="shark-label">60</div>
+    </div>
+
+    <!-- Мини-карта -->
+    <div id="minimap">
+        <div id="minimap-viewport"></div>
+        <div id="minimap-shark"></div>
+    </div>
+
+    <!-- Джойстик для мобильных -->
+    <div id="joystick-zone"></div>
+    <div id="joystick-base"></div>
+    <div id="joystick-thumb"></div>
+
+    <script>
+        const sharkContainer = document.getElementById('shark-container');
+        const sharkBody = document.getElementById('shark-body');
+        const ocean = document.getElementById('ocean');
+        const sharkLabel = document.getElementById('shark-label');
+        const gameOverScreen = document.getElementById('game-over');
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickBase = document.getElementById('joystick-base');
+        const joystickThumb = document.getElementById('joystick-thumb');
+        const minimapEl = document.getElementById('minimap');
+        const minimapViewport = document.getElementById('minimap-viewport');
+        const minimapShark = document.getElementById('minimap-shark');
+
+        // Определяем тач-режим
+        const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+        const WORLD_W = 6000;
+        const WORLD_H = 4000;
+        const EDGE_MARGIN = 120;
+        const CAM_MAX_SPEED = 14;
+        const MINIMAP_PADDING = 2;
+
+        let score = 0;
+        let sharkSize = 60;
+        let posX = WORLD_W / 2;
+        let posY = WORLD_H / 2;
+        let targetX = posX;
+        let targetY = posY;
+        let worldX = WORLD_W / 2 - window.innerWidth / 2;
+        let worldY = Math.max(0, WORLD_H * 0.18 - window.innerHeight / 2);
+        let mouseScreenX = window.innerWidth / 2;
+        let mouseScreenY = window.innerHeight / 2;
+        let isBiting = false;
+        let isGameOver = false;
+
+        // Джойстик
+        let joystickActive = false;
+        let joystickTouchId = null;
+        let joystickCenterX = 0;
+        let joystickCenterY = 0;
+        let joystickDX = 0;
+        let joystickDY = 0;
+
+        // Рекорд
+        let bestScore = parseInt(localStorage.getItem('sharkBestScore') || '0');
+
+        const preyTypes = ['🐟', '🐠', '🐡', '🦐', '🦑', '🦞', '🐬', '🦀'];
+        const enemyTypes = ['🐙', '🐳', '🐋', '💣'];
+        const preys = [];
+        const enemies = [];
+        const rivals = [];
+
+        // === Ввод: мышь ===
+        document.addEventListener('mousemove', (e) => {
+            mouseScreenX = e.clientX;
+            mouseScreenY = e.clientY;
+            targetX = e.clientX + worldX;
+            targetY = e.clientY + worldY;
+        });
+
+        // === Ввод: тач-джойстик ===
+        function onJoystickStart(e) {
+            if (isGameOver) return;
+            const touch = e.changedTouches[0];
+            joystickTouchId = touch.identifier;
+            joystickActive = true;
+            joystickCenterX = touch.clientX;
+            joystickCenterY = touch.clientY;
+            joystickDX = 0;
+            joystickDY = 0;
+
+            joystickBase.style.left = joystickCenterX + 'px';
+            joystickBase.style.top = joystickCenterY + 'px';
+            joystickBase.style.display = 'block';
+            joystickThumb.style.left = joystickCenterX + 'px';
+            joystickThumb.style.top = joystickCenterY + 'px';
+            joystickThumb.style.display = 'block';
+        }
+
+        function onJoystickMove(e) {
+            if (!joystickActive) return;
+            for (const touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) {
+                    const maxR = parseFloat(getComputedStyle(joystickBase).width) / 2;
+                    let dx = touch.clientX - joystickCenterX;
+                    let dy = touch.clientY - joystickCenterY;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > maxR) {
+                        dx = (dx / dist) * maxR;
+                        dy = (dy / dist) * maxR;
+                    }
+                    joystickDX = dx / maxR;
+                    joystickDY = dy / maxR;
+                    joystickThumb.style.left = (joystickCenterX + dx) + 'px';
+                    joystickThumb.style.top = (joystickCenterY + dy) + 'px';
+                    break;
+                }
+            }
+        }
+
+        function onJoystickEnd(e) {
+            for (const touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) {
+                    joystickActive = false;
+                    joystickTouchId = null;
+                    joystickDX = 0;
+                    joystickDY = 0;
+                    joystickBase.style.display = 'none';
+                    joystickThumb.style.display = 'none';
+                    break;
+                }
+            }
+        }
+
+        if (isTouchDevice) {
+            joystickZone.addEventListener('touchstart', onJoystickStart, { passive: false });
+            joystickZone.addEventListener('touchmove', onJoystickMove, { passive: false });
+            joystickZone.addEventListener('touchend', onJoystickEnd, { passive: false });
+            joystickZone.addEventListener('touchcancel', onJoystickEnd, { passive: false });
+            // Также ловим тач на всей странице на случай если пользователь касается выше зоны
+            document.addEventListener('touchstart', (e) => {
+                if (!joystickActive && !isGameOver) {
+                    onJoystickStart(e);
+                }
+            }, { passive: false });
+            document.addEventListener('touchmove', (e) => {
+                if (joystickActive) { e.preventDefault(); onJoystickMove(e); }
+            }, { passive: false });
+            document.addEventListener('touchend', onJoystickEnd, { passive: false });
+            document.addEventListener('touchcancel', onJoystickEnd, { passive: false });
+        }
+
+        // === Спавн ===
+        function randomSpawnPoint(margin = 300) {
+            const x0 = Math.max(0, worldX - margin);
+            const x1 = Math.min(WORLD_W, worldX + window.innerWidth + margin);
+            const y0 = Math.max(0, worldY - margin);
+            const y1 = Math.min(WORLD_H, worldY + window.innerHeight + margin);
+            return {
+                x: x0 + Math.random() * (x1 - x0),
+                y: y0 + Math.random() * (y1 - y0)
+            };
+        }
+
+        function spawnDecorElement(className, x, y, opts = {}) {
+            const el = document.createElement('div');
+            el.className = className;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            if (opts.w) el.style.width = opts.w + 'px';
+            if (opts.h) el.style.height = opts.h + 'px';
+            if (opts.delay) el.style.animationDelay = opts.delay + 's';
+            else if (Math.random() > 0.5) el.style.animationDelay = -Math.random() * 6 + 's';
+            if (opts.zo) el.style.zIndex = opts.zo;
+            if (opts.rot) el.style.transform = `rotate(${opts.rot}deg)`;
+            ocean.appendChild(el);
+            return el;
+        }
+
+        function spawnWorldDecor() {
+            const algaClasses = ['alga', 'alga', 'alga', 'alga-kelp', 'alga-red'];
+            for (let i = 0; i < 160; i++) {
+                const x = Math.random() * WORLD_W;
+                const bias = Math.pow(Math.random(), 1.6);
+                const y = (WORLD_H * 0.3) + bias * (WORLD_H * 0.7);
+                const h = 60 + Math.random() * 160;
+                const cls = algaClasses[Math.floor(Math.random() * algaClasses.length)];
+                spawnDecorElement(cls, x, y, { w: 8, h, delay: Math.random() * 4, zo: 1 });
+            }
+            for (let i = 0; i < 70; i++) {
+                const x = Math.random() * WORLD_W;
+                const y = WORLD_H * 0.6 + Math.pow(Math.random(), 1.3) * WORLD_H * 0.4;
+                const s = 25 + Math.random() * 55;
+                const cls = Math.random() < 0.4 ? 'rock rock-moss' : 'rock';
+                spawnDecorElement(cls, x, y, { w: s, h: s * 0.7, zo: 1 });
+            }
+            const coralClasses = ['coral coral-red', 'coral coral-pink', 'coral coral-purple', 'coral coral-orange'];
+            for (let i = 0; i < 44; i++) {
+                const x = Math.random() * WORLD_W;
+                const y = WORLD_H * 0.5 + Math.random() * WORLD_H * 0.5;
+                const s = 30 + Math.random() * 40;
+                const cls = coralClasses[Math.floor(Math.random() * coralClasses.length)];
+                spawnDecorElement(cls, x, y, { w: s, h: s * 0.8, zo: 2 });
+            }
+            for (let i = 0; i < 70; i++) {
+                const x = Math.random() * WORLD_W;
+                const y = Math.random() * WORLD_H * 0.55;
+                const h = 180 + Math.random() * 320;
+                spawnDecorElement('light-ray', x, y, { w: 60 + Math.random() * 90, h, zo: 0 });
+            }
+            const bgTypes = ['🐟', '🐠', '🐡', '🐙', '🐠', '🐬', '🦞'];
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * WORLD_W;
+                const y = Math.random() * WORLD_H;
+                const el = spawnDecorElement('bg-fish', x, y, {
+                    w: 12 + Math.random() * 10, zo: 0, delay: Math.random() * 6
+                });
+                el.innerText = bgTypes[Math.floor(Math.random() * bgTypes.length)];
+            }
+        }
+
+        function spawnPrey() {
+            if (isGameOver) return;
+            const prey = document.createElement('div');
+            prey.className = 'prey';
+            prey.innerText = preyTypes[Math.floor(Math.random() * preyTypes.length)];
+            prey.style.fontSize = (24 + Math.random() * 14) + 'px';
+            if (Math.random() < 0.5) prey.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
+            const sp = randomSpawnPoint();
+            let px = sp.x, py = sp.y;
+            prey.style.left = `${px}px`;
+            prey.style.top = `${py}px`;
+            ocean.appendChild(prey);
+            preys.push({
+                element: prey,
+                x: px, y: py,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                angle: 0
+            });
+        }
+
+        function spawnEnemy() {
+            if (isGameOver) return;
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.innerText = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            enemy.style.fontSize = (40 + Math.random() * 20) + 'px';
+            if (Math.random() < 0.4) enemy.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
+            const sp = randomSpawnPoint();
+            let ex = sp.x, ey = sp.y;
+            enemy.style.left = `${ex}px`;
+            enemy.style.top = `${ey}px`;
+            ocean.appendChild(enemy);
+            enemies.push({
+                element: enemy,
+                x: ex, y: ey,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3,
+                angle: 0
+            });
+        }
+
+        // === Мини-карта ===
+        let minimapPreyEls = [];
+        let minimapEnemyEls = [];
+
+        function updateMinimap() {
+            const mmW = minimapEl.clientWidth;
+            const mmH = minimapEl.clientHeight;
+            const scaleX = mmW / WORLD_W;
+            const scaleY = mmH / WORLD_H;
+
+            // Видимая область
+            const vw = (window.innerWidth / WORLD_W) * mmW;
+            const vh = (window.innerHeight / WORLD_H) * mmH;
+            const vx = worldX * scaleX;
+            const vy = worldY * scaleY;
+            minimapViewport.style.left = vx + 'px';
+            minimapViewport.style.top = vy + 'px';
+            minimapViewport.style.width = vw + 'px';
+            minimapViewport.style.height = vh + 'px';
+
+            // Акула
+            minimapShark.style.left = (posX * scaleX - 2) + 'px';
+            minimapShark.style.top = (posY * scaleY - 2) + 'px';
+
+            // Рыбки
+            while (minimapPreyEls.length < preys.length) {
+                const d = document.createElement('div');
+                d.className = 'minimap-prey';
+                minimapEl.appendChild(d);
+                minimapPreyEls.push(d);
+            }
+            while (minimapPreyEls.length > preys.length) {
+                minimapPreyEls.pop().remove();
+            }
+            for (let i = 0; i < preys.length; i++) {
+                minimapPreyEls[i].style.left = (preys[i].x * scaleX) + 'px';
+                minimapPreyEls[i].style.top = (preys[i].y * scaleY) + 'px';
+            }
+
+            // Враги
+            while (minimapEnemyEls.length < enemies.length) {
+                const d = document.createElement('div');
+                d.className = 'minimap-enemy';
+                minimapEl.appendChild(d);
+                minimapEnemyEls.push(d);
+            }
+            while (minimapEnemyEls.length > enemies.length) {
+                minimapEnemyEls.pop().remove();
+            }
+            for (let i = 0; i < enemies.length; i++) {
+                minimapEnemyEls[i].style.left = (enemies[i].x * scaleX) + 'px';
+                minimapEnemyEls[i].style.top = (enemies[i].y * scaleY) + 'px';
+            }
+        }
+
+        // === Основной цикл ===
+        let minimapFrame = 0;
+
+        function update() {
+            if (isGameOver) return;
+
+            // === Камера ===
+            let camDX = 0, camDY = 0;
+
+            if (joystickActive) {
+                // На мобильных джойстик двигает камеру
+                const joySpeed = CAM_MAX_SPEED * 1.2;
+                camDX = joystickDX * joySpeed;
+                camDY = joystickDY * joySpeed;
+            } else {
+                if (mouseScreenX < EDGE_MARGIN) camDX = -(1 - mouseScreenX / EDGE_MARGIN) * CAM_MAX_SPEED;
+                else if (mouseScreenX > window.innerWidth - EDGE_MARGIN) camDX = (1 - (window.innerWidth - mouseScreenX) / EDGE_MARGIN) * CAM_MAX_SPEED;
+                if (mouseScreenY < EDGE_MARGIN) camDY = -(1 - mouseScreenY / EDGE_MARGIN) * CAM_MAX_SPEED;
+                else if (mouseScreenY > window.innerHeight - EDGE_MARGIN) camDY = (1 - (window.innerHeight - mouseScreenY) / EDGE_MARGIN) * CAM_MAX_SPEED;
+            }
+
+            if (camDX !== 0 || camDY !== 0) {
+                worldX = Math.min(Math.max(worldX + camDX, 0), Math.max(0, WORLD_W - window.innerWidth));
+                worldY = Math.min(Math.max(worldY + camDY, 0), Math.max(0, WORLD_H - window.innerHeight));
+            }
+
+            ocean.style.transform = `translate(${-worldX}px, ${-worldY}px)`;
+
+            // === Акула ===
+            if (joystickActive) {
+                // На мобильных: акула плывёт вслед за джойстиком,
+                // камера следует за акулой (акула всегда в центре экрана)
+                const moveSpeed = 5;
+                posX += joystickDX * moveSpeed;
+                posY += joystickDY * moveSpeed;
+                targetX = posX;
+                targetY = posY;
+                // Камера: центрируем на акуле
+                worldX = Math.min(Math.max(posX - window.innerWidth / 2, 0), WORLD_W - window.innerWidth);
+                worldY = Math.min(Math.max(posY - window.innerHeight / 2, 0), WORLD_H - window.innerHeight);
+                mouseScreenX = window.innerWidth / 2;
+                mouseScreenY = window.innerHeight / 2;
+            } else {
+                targetX = mouseScreenX + worldX;
+                targetY = mouseScreenY + worldY;
+                posX += (targetX - posX) * 0.08;
+                posY += (targetY - posY) * 0.08;
+            }
+
+            posX = Math.min(Math.max(posX, 20), WORLD_W - 20);
+            posY = Math.min(Math.max(posY, 20), WORLD_H - 20);
+
+            const dx = targetX - posX;
+            const dy = targetY - posY;
+            let angle;
+            if (joystickActive && (Math.abs(joystickDX) > 0.05 || Math.abs(joystickDY) > 0.05)) {
+                angle = Math.atan2(joystickDY, joystickDX) * (180 / Math.PI);
+            } else {
+                angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            }
+
+            const currentW = 100 * (sharkSize / 60);
+            const currentH = 60 * (sharkSize / 60);
+
+            sharkContainer.style.left = `${posX - currentW / 2}px`;
+            sharkContainer.style.top = `${posY - currentH / 2}px`;
+            sharkContainer.style.transform = `rotate(${angle}deg)`;
+            sharkBody.style.width = `${currentW}px`;
+            sharkBody.style.height = `${currentH}px`;
+
+            sharkLabel.style.left = `${posX}px`;
+            sharkLabel.style.top = `${posY + currentH * 0.62}px`;
+
+            // === Добыча ===
+            for (let i = preys.length - 1; i >= 0; i--) {
+                const p = preys[i];
+                const distToShark = Math.hypot(posX - p.x, posY - p.y);
+                if (distToShark < 200) {
+                    const escapeX = p.x - posX;
+                    const escapeY = p.y - posY;
+                    const mag = Math.hypot(escapeX, escapeY);
+                    p.vx += (escapeX / mag) * 0.2;
+                    p.vy += (escapeY / mag) * 0.2;
+                }
+                const speed = Math.hypot(p.vx, p.vy);
+                const maxSpeed = 3;
+                if (speed > maxSpeed) {
+                    p.vx = (p.vx / speed) * maxSpeed;
+                    p.vy = (p.vy / speed) * maxSpeed;
+                }
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > WORLD_W - 30) p.vx *= -1;
+                if (p.y < 0 || p.y > WORLD_H - 30) p.vy *= -1;
+                p.angle = Math.atan2(p.vy, p.vx) * (180 / Math.PI);
+                p.element.style.left = `${p.x}px`;
+                p.element.style.top = `${p.y}px`;
+                p.element.style.transform = `rotate(${p.angle}deg)`;
+
+                if (distToShark < sharkSize / 1.5) {
+                    ocean.removeChild(p.element);
+                    preys.splice(i, 1);
+                    score += 10;
+                    sharkSize += 2;
+                    sharkLabel.innerText = Math.floor(sharkSize);
+                    triggerBite();
+                }
+            }
+
+            // === Враги ===
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const distToShark = Math.hypot(posX - e.x, posY - e.y);
+                if (sharkSize < 150 && distToShark < 400) {
+                    const huntX = posX - e.x;
+                    const huntY = posY - e.y;
+                    const mag = Math.hypot(huntX, huntY);
+                    e.vx += (huntX / mag) * 0.15;
+                    e.vy += (huntY / mag) * 0.15;
+                } else if (sharkSize >= 150 && distToShark < 300) {
+                    const escapeX = e.x - posX;
+                    const escapeY = e.y - posY;
+                    const mag = Math.hypot(escapeX, escapeY);
+                    e.vx += (escapeX / mag) * 0.2;
+                    e.vy += (escapeY / mag) * 0.2;
+                }
+                const speed = Math.hypot(e.vx, e.vy);
+                const maxSpeed = 4;
+                if (speed > maxSpeed) {
+                    e.vx = (e.vx / speed) * maxSpeed;
+                    e.vy = (e.vy / speed) * maxSpeed;
+                }
+                e.x += e.vx;
+                e.y += e.vy;
+                if (e.x < 0 || e.x > WORLD_W - 50) e.vx *= -1;
+                if (e.y < 0 || e.y > WORLD_H - 50) e.vy *= -1;
+                e.angle = Math.atan2(e.vy, e.vx) * (180 / Math.PI);
+                e.element.style.left = `${e.x}px`;
+                e.element.style.top = `${e.y}px`;
+                e.element.style.transform = `rotate(${e.angle}deg)`;
+
+                if (distToShark < sharkSize / 2) {
+                    if (e.element.innerText === '💣') {
+                        endGame();
+                    } else {
+                        const enemyDangerSize = 120;
+                        if (sharkSize < enemyDangerSize) {
+                            endGame();
+                        } else {
+                            ocean.removeChild(e.element);
+                            enemies.splice(i, 1);
+                            score += 50;
+                            sharkSize += 5;
+                            sharkLabel.innerText = Math.floor(sharkSize);
+                            triggerBite();
+                        }
+                    }
+                }
+            }
+
+            updateRivals();
+
+            // Мини-карта каждые 3 кадра
+            minimapFrame++;
+            if (minimapFrame % 3 === 0) updateMinimap();
+
+            requestAnimationFrame(update);
+        }
+
+        function triggerBite() {
+            if (isBiting) return;
+            isBiting = true;
+            sharkBody.classList.add('bite-anim');
+            setTimeout(() => {
+                sharkBody.classList.remove('bite-anim');
+                isBiting = false;
+            }, 200);
+        }
+
+        // === Конкуренты ===
+        const rivalTypes = ['🦈', '🐅', '🐅'];
+        const RIVAL_START_SIZE = 26;
+
+        function spawnRival() {
+            if (isGameOver) return;
+            if (rivals.length > 8) return;
+            const container = document.createElement('div');
+            container.className = 'rival';
+            const svg = document.createElement('div');
+            svg.innerText = rivalTypes[Math.floor(Math.random() * rivalTypes.length)];
+            svg.style.fontSize = RIVAL_START_SIZE + 'px';
+            svg.style.transform = 'translateY(-50%)';
+            container.appendChild(svg);
+            const label = document.createElement('div');
+            label.className = 'rival-label';
+            label.innerText = RIVAL_START_SIZE;
+            const sp = randomSpawnPoint(60);
+            let rx = sp.x, ry = sp.y;
+            const away = Math.atan2(ry - posY, rx - posX);
+            rx += Math.cos(away) * 120;
+            ry += Math.sin(away) * 120;
+            ocean.appendChild(container);
+            ocean.appendChild(label);
+            rivals.push({
+                element: container,
+                svg: svg,
+                label: label,
+                x: rx, y: ry,
+                vx: 0, vy: 0,
+                size: RIVAL_START_SIZE
+            });
+        }
+
+        function updateRivals() {
+            for (let i = rivals.length - 1; i >= 0; i--) {
+                const r = rivals[i];
+                const distToShark = Math.hypot(posX - r.x, posY - r.y);
+                let nearestPrey = null;
+                let nearestDist = Infinity;
+                for (const p of preys) {
+                    const d = Math.hypot(r.x - p.x, r.y - p.y);
+                    if (d < nearestDist) { nearestDist = d; nearestPrey = p; }
+                }
+                if (nearestPrey && nearestDist < 320) {
+                    const dx = nearestPrey.x - r.x;
+                    const dy = nearestPrey.y - r.y;
+                    const mag = Math.hypot(dx, dy) || 1;
+                    r.vx += (dx / mag) * 0.12;
+                    r.vy += (dy / mag) * 0.12;
+                }
+                if (distToShark < Math.min(sharkSize, 200) + r.size * 1.5) {
+                    const dx = r.x - posX;
+                    const dy = r.y - posY;
+                    const mag = Math.hypot(dx, dy) || 1;
+                    r.vx += (dx / mag) * 0.3;
+                    r.vy += (dy / mag) * 0.3;
+                }
+                const speed = Math.hypot(r.vx, r.vy);
+                const maxSpeed = 1.8 + (r.size / RIVAL_START_SIZE) * 0.4;
+                if (speed > maxSpeed) {
+                    r.vx = (r.vx / speed) * maxSpeed;
+                    r.vy = (r.vy / speed) * maxSpeed;
+                }
+                r.x += r.vx;
+                r.y += r.vy;
+                if (r.x < 0 || r.x > WORLD_W - 50) r.vx *= -1;
+                if (r.y < 0 || r.y > WORLD_H - 50) r.vy *= -1;
+                const ang = Math.atan2(r.vy, r.vx) * (180 / Math.PI);
+                r.element.style.left = `${r.x}px`;
+                r.element.style.top = `${r.y}px`;
+                r.element.style.transform = `rotate(${ang}deg)`;
+                r.label.style.left = `${r.x}px`;
+                r.label.style.top = `${r.y + r.size * 0.55}px`;
+                for (let j = preys.length - 1; j >= 0; j--) {
+                    const p = preys[j];
+                    if (Math.hypot(r.x - p.x, r.y - p.y) < (r.size / 2 + 14)) {
+                        ocean.removeChild(p.element);
+                        preys.splice(j, 1);
+                        r.size += 1.6;
+                        r.svg.style.fontSize = r.size + 'px';
+                        r.label.innerText = Math.floor(r.size);
+                        triggerRivalEvolve(r);
+                    }
+                }
+                if (distToShark < sharkSize / 1.3) {
+                    ocean.removeChild(r.element);
+                    ocean.removeChild(r.label);
+                    rivals.splice(i, 1);
+                    if (sharkSize < 500) {
+                        sharkSize += 2;
+                        sharkLabel.innerText = Math.floor(sharkSize);
+                    }
+                }
+            }
+        }
+
+        function triggerRivalEvolve(r) {
+            r.element.style.transition = 'filter 0.25s ease';
+            r.element.style.filter = 'brightness(1.8)';
+            setTimeout(() => { r.element.style.filter = ''; }, 250);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('sharkBestScore', bestScore);
+            }
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function createBubble() {
+            if (isGameOver) return;
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 20 + 10 + 'px';
+            bubble.style.width = size;
+            bubble.style.height = size;
+            const bs = randomSpawnPoint(0);
+            bubble.style.left = bs.x + 'px';
+            bubble.style.top = (worldY + window.innerHeight + 50) + 'px';
+            bubble.style.animationDuration = Math.random() * 3 + 4 + 's';
+            ocean.appendChild(bubble);
+            setTimeout(() => bubble.remove(), 7000);
+        }
+
+        function createGlint() {
+            if (isGameOver) return;
+            if (worldY > WORLD_H * 0.5) return;
+            const glint = document.createElement('div');
+            glint.className = 'glint';
+            const x = Math.random() * (worldX + window.innerWidth);
+            glint.style.left = `${x}px`;
+            glint.style.top = `${worldY}px`;
+            glint.style.transform = `rotate(${(Math.random() - 0.5) * 30}deg)`;
+            glint.style.opacity = Math.random() * 0.5 + 0.3;
+            const dur = 2 + Math.random() * 3;
+            glint.style.animationDuration = dur + 's';
+            ocean.appendChild(glint);
+            setTimeout(() => glint.remove(), 5000);
+        }
+
+        // === Стартовая заставка ===
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        let gameStarted = false;
+
+        function createStartBubble() {
+            const b = document.createElement('div');
+            b.className = 'start-bubble';
+            const size = 10 + Math.random() * 40;
+            b.style.width = size + 'px';
+            b.style.height = size + 'px';
+            b.style.left = Math.random() * 100 + '%';
+            b.style.bottom = '-50px';
+            b.style.animationDuration = (4 + Math.random() * 6) + 's';
+            b.style.animationDelay = Math.random() * 2 + 's';
+            startScreen.appendChild(b);
+            setTimeout(() => b.remove(), 12000);
+        }
+        setInterval(createStartBubble, 600);
+        for (let i = 0; i < 8; i++) createStartBubble();
+
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            startScreen.style.transition = 'opacity 0.5s ease';
+            startScreen.style.opacity = '0';
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+            }, 500);
+        }
+
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+        startScreen.addEventListener('click', startGame);
+
+        // Игровой цикл запускается сразу, но ничего не видно за заставкой
+        setInterval(spawnPrey, 1500);
+        setInterval(spawnEnemy, 5000);
+        setInterval(spawnRival, 4000);
+        setInterval(createBubble, 400);
+        setInterval(createGlint, 250);
+        spawnWorldDecor();
+        for (let i = 0; i < 10; i++) spawnPrey();
+        for (let i = 0; i < 3; i++) spawnEnemy();
+        update();
+    </script>
+</body>
+</html>
