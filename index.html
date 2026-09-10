@@ -306,19 +306,18 @@
 
         #game-over {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: none;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.6);
             color: white;
             font-size: clamp(24px, 6vw, 48px);
             text-align: center;
-            display: none;
-            z-index: 200;
-            background: rgba(0,0,0,0.7);
-            padding: clamp(12px, 3vw, 20px);
-            border-radius: 20px;
             cursor: pointer;
-            max-width: 90vw;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
         }
         #game-over .restart-hint {
             font-size: clamp(12px, 3vw, 24px);
@@ -1187,7 +1186,7 @@
                 bestScore = score;
                 localStorage.setItem('sharkBestScore', bestScore);
             }
-            gameOverScreen.style.display = 'block';
+            gameOverScreen.style.display = 'flex';
         }
 
         function createBubble() {
