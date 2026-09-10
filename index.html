@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
     <title>Игра: Голодная Акула</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -10,7 +10,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             width: 100vw;
             height: 100dvh;
             background: linear-gradient(to bottom, #5bcaff 0%, #2a8fc9 45%, #175d9e 85%, #0e3b6b 100%);
@@ -40,21 +40,217 @@
             background: radial-gradient(ellipse at center top, #7ecdf5 0%, #1a6ea8 55%, #0b3a6b 100%);
         }
 
+        /* ===== Игровой интерфейс (HUD) ===== */
         #ui {
             position: absolute;
-            top: max(10px, env(safe-area-inset-top, 10px));
+            top: max(8px, env(safe-area-inset-top, 8px));
             left: 10px;
             right: 10px;
             color: white;
-            font-size: clamp(14px, 3.5vw, 24px);
             z-index: 100;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            pointer-events: none;
             display: none;
-            gap: 4px 12px;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
         }
 
+        .hud-panel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .hud-card {
+            background: rgba(8, 28, 56, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: 12px;
+            padding: 5px 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .hud-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(200, 230, 255, 0.8);
+            font-weight: 700;
+        }
+
+        .hud-val {
+            font-size: clamp(16px, 3.2vw, 22px);
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: transform 0.15s ease;
+        }
+
+        .hud-val.bump {
+            transform: scale(1.25);
+            color: #ffd700;
+        }
+
+        /* Центральная панель прогресса эволюции */
+        .hud-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 140px;
+        }
+
+        .rank-badge {
+            font-size: clamp(11px, 2.4vw, 14px);
+            font-weight: 800;
+            color: #ffd700;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            letter-spacing: 0.5px;
+        }
+
+        .rank-bar-bg {
+            width: 100%;
+            height: 7px;
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .rank-bar-fill {
+            height: 100%;
+            width: 15%;
+            background: linear-gradient(90deg, #ffc837, #ff8008);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        /* Шкала выносливости (Турбо) */
+        .stamina-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+        }
+
+        .stamina-bar-bg {
+            flex: 1;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            overflow: hidden;
+        }
+
+        .stamina-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            border-radius: 6px;
+            transition: width 0.1s linear;
+        }
+
+        .stamina-icon {
+            font-size: 10px;
+            color: #00e5ff;
+            font-weight: 800;
+        }
+
+        /* Кнопки управления в HUD */
+        .hud-btn {
+            background: rgba(8, 28, 56, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            border-radius: 12px;
+            width: clamp(34px, 7vw, 42px);
+            height: clamp(34px, 7vw, 42px);
+            font-size: clamp(14px, 3.5vw, 18px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.15s;
+        }
+        .hud-btn:hover {
+            background: rgba(16, 50, 95, 0.85);
+            transform: scale(1.05);
+        }
+        .hud-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Активные баффы */
+        #active-buffs {
+            position: absolute;
+            top: 65px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .buff-pill {
+            background: rgba(10, 35, 70, 0.85);
+            border: 1.5px solid rgba(0, 229, 255, 0.6);
+            border-radius: 20px;
+            padding: 3px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+            animation: buff-pop 0.3s ease-out;
+        }
+        @keyframes buff-pop {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== Кнопка Турбо для мобильных устройств ===== */
+        #boost-btn {
+            position: absolute;
+            bottom: max(18px, env(safe-area-inset-bottom, 18px));
+            left: 18px;
+            width: clamp(65px, 16vw, 85px);
+            height: clamp(65px, 16vw, 85px);
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #00f2fe, #4facfe 70%, #0052d4 100%);
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            color: #fff;
+            font-size: clamp(11px, 2.6vw, 13px);
+            font-weight: 900;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.65), 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 90;
+            user-select: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        #boost-btn:active, #boost-btn.active {
+            transform: scale(0.92);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.95);
+            filter: brightness(1.2);
+        }
+
+        /* Показываем турбо-кнопку на сенсорных устройствах */
+        @media (hover: none) and (pointer: coarse) {
+            #boost-btn { display: flex; }
+        }
+
+        /* ===== Акула игрока ===== */
         .shark-container {
             position: absolute;
             user-select: none;
@@ -64,6 +260,7 @@
             justify-content: center;
             align-items: center;
             pointer-events: none;
+            transform-origin: center center;
         }
 
         .shark-svg {
@@ -71,6 +268,7 @@
             height: 60px;
             will-change: transform;
             transition: width 0.3s, height 0.3s;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));
         }
 
         .shark-label {
@@ -79,35 +277,69 @@
             font-weight: bold;
             color: #fff;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.85);
-            background: rgba(0,0,0,0.5);
-            padding: 1px 6px;
+            background: rgba(0,0,0,0.55);
+            padding: 1px 7px;
             border-radius: 9px;
             pointer-events: none;
             white-space: nowrap;
             transform: translate(-50%, 0);
             will-change: left, top;
+            z-index: 11;
         }
 
         .tail {
-            animation: tail-wag 0.6s infinite ease-in-out;
+            animation: tail-wag 0.55s infinite ease-in-out;
             transform-origin: 30px 30px;
         }
 
         @keyframes tail-wag {
-            0%, 100% { transform: rotate(-10deg); }
-            50% { transform: rotate(10deg); }
+            0%, 100% { transform: rotate(-12deg); }
+            50% { transform: rotate(12deg); }
         }
 
+        /* Обычный укус рыбки */
         .bite-anim {
             animation: bite-scale 0.2s ease-in-out;
         }
-
         @keyframes bite-scale {
             0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
+            50% { transform: scale(1.25) translate(4px, 0); }
             100% { transform: scale(1); }
         }
 
+        /* Мощный укус соперника / крупного врага */
+        .heavy-bite-anim {
+            animation: heavy-bite-anim 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        }
+        @keyframes heavy-bite-anim {
+            0% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35)); }
+            35% {
+                transform: scale(1.42) translate(14px, 0);
+                filter: drop-shadow(0 0 16px rgba(255, 30, 50, 0.9)) brightness(1.2);
+            }
+            70% { transform: scale(0.92); }
+            100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35)); }
+        }
+
+        /* Защитный щит вокруг акулы */
+        .shield-aura {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid #00e5ff;
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.12) 0%, rgba(0, 180, 255, 0.32) 75%, rgba(0, 229, 255, 0.65) 100%);
+            box-shadow: 0 0 24px #00e5ff, inset 0 0 16px #00e5ff;
+            pointer-events: none;
+            z-index: 9;
+            transform: translate(-50%, -50%);
+            animation: shield-pulse 1.4s ease-in-out infinite alternate;
+            display: none;
+        }
+        @keyframes shield-pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+            100% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+        }
+
+        /* ===== Добыча, Враги, Соперники ===== */
         .prey, .enemy {
             position: absolute;
             user-select: none;
@@ -124,21 +356,156 @@
             will-change: transform, left, top;
             user-select: none;
             pointer-events: none;
+            transition: transform 0.1s linear;
         }
 
         .rival-label {
             position: absolute;
             font-size: clamp(9px, 2vw, 11px);
-            font-weight: bold;
+            font-weight: 800;
             color: #fff;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.45);
-            padding: 1px 4px;
+            background: rgba(20, 160, 40, 0.75);
+            padding: 1px 5px;
             border-radius: 8px;
             pointer-events: none;
             white-space: nowrap;
             transform: translate(-50%, 0);
             will-change: left, top;
+            transition: background 0.2s;
+            z-index: 9;
+        }
+
+        .rival-label.danger {
+            background: rgba(220, 20, 40, 0.85) !important;
+            animation: rival-danger-pulse 0.8s infinite alternate;
+        }
+        @keyframes rival-danger-pulse {
+            0% { transform: translate(-50%, 0) scale(1); }
+            100% { transform: translate(-50%, 0) scale(1.18); box-shadow: 0 0 8px #ff2244; }
+        }
+
+        /* Анимация крушения и разрывания соперника */
+        .rival-crunching {
+            animation: rival-crunch-anim 0.38s ease-out forwards !important;
+            pointer-events: none !important;
+        }
+        @keyframes rival-crunch-anim {
+            0% {
+                transform: scale(1) rotate(0deg);
+                filter: brightness(2) contrast(1.5);
+            }
+            35% {
+                transform: scale(1.35) rotate(45deg);
+                filter: brightness(2.8) drop-shadow(0 0 16px rgba(255, 30, 30, 0.9));
+            }
+            100% {
+                transform: scale(0) rotate(220deg);
+                opacity: 0;
+            }
+        }
+
+        /* Кровавые брызги при поедании соперника */
+        .blood-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+            will-change: transform, opacity;
+        }
+
+        /* Разлетающиеся кусочки добычи/кости */
+        .meat-chunk {
+            position: absolute;
+            pointer-events: none;
+            z-index: 15;
+            will-change: transform, opacity;
+        }
+
+        /* Ударная волна укуса */
+        .shockwave-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 60, 60, 0.85);
+            box-shadow: 0 0 16px rgba(255, 100, 100, 0.7);
+            pointer-events: none;
+            z-index: 14;
+            transform: translate(-50%, -50%) scale(0.1);
+            animation: shockwave-expand 0.4s ease-out forwards;
+        }
+        @keyframes shockwave-expand {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        /* Всплывающий текст очков и бонусов */
+        .floating-text {
+            position: absolute;
+            font-weight: 900;
+            font-size: 20px;
+            color: #ffe600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(255, 200, 0, 0.7);
+            pointer-events: none;
+            z-index: 30;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            animation: float-up-fade 0.95s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .floating-text.rival-kill {
+            font-size: 28px;
+            color: #ff3344;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.9), 0 0 18px rgba(255, 30, 30, 0.9);
+        }
+        @keyframes float-up-fade {
+            0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+            25% { transform: translate(-50%, -22px) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -75px) scale(1); opacity: 0; }
+        }
+
+        /* Пузырьки турбо-ускорения */
+        .boost-bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95), rgba(150,220,255,0.45));
+            border: 1px solid rgba(255,255,255,0.85);
+            pointer-events: none;
+            z-index: 9;
+            animation: boost-bubble-drift 0.65s ease-out forwards;
+        }
+        @keyframes boost-bubble-drift {
+            0% { transform: scale(1); opacity: 0.95; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        /* Бонусные сферы в океане */
+        .powerup-item {
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(0,220,255,0.45));
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 0 18px rgba(0,220,255,0.85), inset 0 0 12px rgba(255,255,255,0.7);
+            animation: powerup-float 2.2s ease-in-out infinite alternate;
+            z-index: 7;
+            pointer-events: none;
+        }
+        @keyframes powerup-float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-12px) scale(1.1); box-shadow: 0 0 25px rgba(0,220,255,1); }
+        }
+
+        /* Тряска экрана */
+        @keyframes screen-shake-anim {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 5px); }
+            40% { transform: translate(7px, -4px); }
+            60% { transform: translate(-5px, -3px); }
+            80% { transform: translate(4px, 3px); }
         }
 
         @keyframes fish-swim {
@@ -287,7 +654,6 @@
 
         @keyframes glint-fall {
             0% { transform: translateY(0) rotate(15deg); opacity: 0; }
-            10% { opacity: 0.8; }
             100% { transform: translateY(120vh) rotate(15deg); opacity: 0; }
         }
 
@@ -304,23 +670,149 @@
             50% { transform: translateX(25px) scaleX(0.9); }
         }
 
+        /* ===== Экран Game Over ===== */
         #game-over {
             position: absolute;
             inset: 0;
             display: none;
             z-index: 200;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(3, 15, 30, 0.82);
             color: white;
-            font-size: clamp(24px, 6vw, 48px);
-            text-align: center;
-            cursor: pointer;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            gap: 12px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: fade-in-panel 0.3s ease-out;
         }
-        #game-over .restart-hint {
-            font-size: clamp(12px, 3vw, 24px);
+        @keyframes fade-in-panel {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .go-card {
+            background: linear-gradient(145deg, rgba(16, 45, 85, 0.9), rgba(8, 25, 52, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 24px;
+            padding: clamp(20px, 4vw, 36px);
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 25px rgba(0, 180, 255, 0.25);
+        }
+
+        .go-title {
+            font-size: clamp(24px, 5.5vw, 34px);
+            font-weight: 900;
+            color: #ff4757;
+            text-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+            letter-spacing: 1px;
+        }
+
+        .go-reason {
+            font-size: clamp(13px, 3vw, 15px);
+            color: #dfe4ea;
+            font-style: italic;
+        }
+
+        .go-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 6px 0;
+        }
+
+        .go-stat-cell {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .go-stat-label {
+            font-size: 11px;
+            color: rgba(200, 225, 255, 0.7);
+            text-transform: uppercase;
+        }
+
+        .go-stat-val {
+            font-size: clamp(17px, 3.8vw, 22px);
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .go-stat-val.gold {
+            color: #ffd700;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        }
+
+        .go-btn {
+            font-size: clamp(16px, 3.6vw, 20px);
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, #1e90ff, #00d2d3);
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 12px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0, 210, 211, 0.45);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 6px;
+        }
+        .go-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 24px rgba(0, 210, 211, 0.65);
+        }
+        .go-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ===== Экран Паузы ===== */
+        #pause-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            z-index: 200;
+            background: rgba(5, 20, 42, 0.85);
+            color: white;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .pause-card {
+            background: linear-gradient(145deg, rgba(16, 45, 85, 0.9), rgba(8, 25, 52, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 380px;
+            width: 88%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .pause-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #00d2d3;
+            letter-spacing: 1.5px;
+        }
+
+        .pause-help {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(220, 240, 255, 0.85);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 10px;
         }
 
         /* ===== Стартовая заставка ===== */
@@ -334,7 +826,7 @@
             justify-content: center;
             background: linear-gradient(to bottom, #0a2a4a 0%, #0d3d6b 40%, #175d9e 70%, #1a6ea8 100%);
             cursor: pointer;
-            gap: clamp(10px, 3vh, 30px);
+            gap: clamp(10px, 3vh, 26px);
         }
         #start-screen::before {
             content: '';
@@ -360,10 +852,12 @@
         }
         #start-screen .subtitle {
             font-size: clamp(14px, 3vw, 22px);
-            color: rgba(200, 230, 255, 0.7);
+            color: rgba(200, 230, 255, 0.75);
             text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
             animation: title-float 3s ease-in-out infinite;
             animation-delay: 0.3s;
+            text-align: center;
+            padding: 0 16px;
         }
         #start-screen .shark-emoji {
             font-size: clamp(60px, 16vw, 120px);
@@ -409,7 +903,7 @@
             80% { transform: translateX(-5px) rotate(-1deg); }
             100% { transform: translateX(0) rotate(0deg); opacity: 1; }
         }
-        /* Пузырьки на заставке */
+
         .start-bubble {
             position: absolute;
             border-radius: 50%;
@@ -424,13 +918,13 @@
             100% { transform: translateY(-110vh) scale(1); opacity: 0; }
         }
 
-        /* ===== Джойстик (только на тач-устройствах) ===== */
+        /* ===== Джойстик для мобильных устройств ===== */
         #joystick-zone {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 40vh;
+            height: 44vh;
             z-index: 50;
             display: none;
             pointer-events: none;
@@ -509,6 +1003,14 @@
             border-radius: 50%;
             pointer-events: none;
         }
+        .minimap-rival {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 170, 0, 0.85);
+            border-radius: 50%;
+            pointer-events: none;
+        }
 
         /* Показываем джойстик только для тач-устройств */
         @media (hover: none) and (pointer: coarse) {
@@ -528,21 +1030,103 @@
 </head>
 <body>
 
+    <!-- Стартовый экран -->
     <div id="start-screen">
         <div class="shark-emoji">🦈</div>
         <div class="title">Голодная Акула</div>
-        <div class="subtitle">Стань самым большим хищником океана</div>
+        <div class="subtitle">Охоться на рыбу, сокрушай соперников и стань Мегалодоном!</div>
         <button class="start-btn" id="start-btn">ИГРАТЬ</button>
-
     </div>
 
-    <div id="game-over" onclick="location.reload()">
-        ИГРА ОКОНЧЕНА!
-        <div class="restart-hint">Нажми, чтобы начать заново</div>
+    <!-- Игровой интерфейс (HUD) -->
+    <div id="ui">
+        <div class="hud-panel">
+            <div class="hud-card">
+                <span class="hud-label">Счёт</span>
+                <span id="score-val" class="hud-val">0</span>
+            </div>
+            <div class="hud-card">
+                <span class="hud-label">Рекорд</span>
+                <span id="best-val" class="hud-val">0</span>
+            </div>
+        </div>
+
+        <div class="hud-panel hud-center">
+            <div class="rank-badge" id="rank-name">Малёк 🐟</div>
+            <div class="rank-bar-bg" title="Прогресс эволюции">
+                <div class="rank-bar-fill" id="rank-bar-fill"></div>
+            </div>
+            <div class="stamina-wrap" title="Турбо-ускорение (Пробел)">
+                <span class="stamina-icon">⚡</span>
+                <div class="stamina-bar-bg">
+                    <div class="stamina-bar-fill" id="stamina-bar-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud-panel">
+            <button class="hud-btn" id="sound-btn" title="Звук">🔊</button>
+            <button class="hud-btn" id="pause-btn" title="Пауза">⏸️</button>
+        </div>
     </div>
+
+    <!-- Индикаторы активных бонусов -->
+    <div id="active-buffs"></div>
+
+    <!-- Кнопка Турбо для тач-устройств -->
+    <div id="boost-btn">
+        <span>⚡</span>
+        <span>ТУРБО</span>
+    </div>
+
+    <!-- Экран паузы -->
+    <div id="pause-overlay">
+        <div class="pause-card">
+            <div class="pause-title">ПАУЗА</div>
+            <div class="pause-help">
+                <b>Управление:</b><br>
+                🖱️ Мышь / Касание — Плавание<br>
+                ⚡ Пробел / ПКМ / Кнопка ТУРБО — Рывок<br>
+                🦈 Ешь соперников, пока они меньше тебя!
+            </div>
+            <button class="go-btn" id="resume-btn">ПРОДОЛЖИТЬ</button>
+        </div>
+    </div>
+
+    <!-- Экран Game Over -->
+    <div id="game-over">
+        <div class="go-card">
+            <div class="go-title">ИГРА ОКОНЧЕНА</div>
+            <div class="go-reason" id="go-reason">Вас настигла опасность глубин!</div>
+            <div class="go-stats-grid">
+                <div class="go-stat-cell">
+                    <span class="go-stat-label">Счёт</span>
+                    <span class="go-stat-val" id="go-score">0</span>
+                </div>
+                <div class="go-stat-cell">
+                    <span class="go-stat-label">Рекорд</span>
+                    <span class="go-stat-val gold" id="go-best">0</span>
+                </div>
+                <div class="go-stat-cell">
+                    <span class="go-stat-label">Съедено рыб</span>
+                    <span class="go-stat-val" id="go-prey">0</span>
+                </div>
+                <div class="go-stat-cell">
+                    <span class="go-stat-label">Соперников</span>
+                    <span class="go-stat-val" id="go-rivals">0</span>
+                </div>
+            </div>
+            <button class="go-btn" id="restart-btn">ИГРАТЬ СНОВА</button>
+        </div>
+    </div>
+
     <div id="water-layer"></div>
 
+    <!-- Океан -->
     <div id="ocean">
+        <!-- Щит акулы -->
+        <div id="shield-aura" class="shield-aura"></div>
+
         <div id="shark-container" class="shark-container">
             <svg id="shark-body" class="shark-svg" viewBox="0 0 120 70">
                 <defs>
@@ -601,11 +1185,215 @@
     <div id="joystick-thumb"></div>
 
     <script>
+        // === Web Audio API: Процедурный синтезатор звуков (без внешних файлов) ===
+        const Sound = {
+            ctx: null,
+            muted: localStorage.getItem('sharkMuted') === 'true',
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            toggleMute() {
+                this.muted = !this.muted;
+                localStorage.setItem('sharkMuted', this.muted);
+                return this.muted;
+            },
+            playChomp() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, t);
+                osc.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+                gain.gain.setValueAtTime(0.35, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(t);
+                osc.stop(t + 0.12);
+            },
+            playCrunch() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                // Низкочастотный удар укуса
+                const osc = this.ctx.createOscillator();
+                const oscGain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, t);
+                osc.frequency.exponentialRampToValueAtTime(40, t + 0.28);
+                oscGain.gain.setValueAtTime(0.55, t);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.28);
+                osc.connect(oscGain);
+                oscGain.connect(this.ctx.destination);
+                osc.start(t);
+                osc.stop(t + 0.28);
+
+                // Хруст костей и разрыв воды
+                const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.06));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1400, t);
+                filter.frequency.linearRampToValueAtTime(350, t + 0.24);
+                filter.Q.value = 3;
+                const noiseGain = this.ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.7, t);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.24);
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(this.ctx.destination);
+                noise.start(t);
+            },
+            playExplosion() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                // Гулкий подводный саб-бас
+                const osc = this.ctx.createOscillator();
+                const oscGain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.exponentialRampToValueAtTime(25, t + 0.6);
+                oscGain.gain.setValueAtTime(0.75, t);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+                osc.connect(oscGain);
+                oscGain.connect(this.ctx.destination);
+                osc.start(t);
+                osc.stop(t + 0.6);
+                // Взрывной шум
+                const bufferSize = Math.floor(this.ctx.sampleRate * 0.5);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.15));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(550, t);
+                filter.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+                const noiseGain = this.ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.85, t);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(this.ctx.destination);
+                noise.start(t);
+            },
+            playPowerup() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                notes.forEach((freq, idx) => {
+                    const t = this.ctx.currentTime + idx * 0.07;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, t);
+                    gain.gain.setValueAtTime(0.25, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.18);
+                });
+            },
+            playLevelUp() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const chord = [392.0, 523.25, 659.25, 783.99];
+                chord.forEach((freq, idx) => {
+                    const t = this.ctx.currentTime + idx * 0.08;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, t);
+                    gain.gain.setValueAtTime(0.32, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.35);
+                });
+            },
+            playGameOver() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const notes = [310, 260, 210, 150];
+                notes.forEach((freq, idx) => {
+                    const t = this.ctx.currentTime + idx * 0.18;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, t);
+                    gain.gain.setValueAtTime(0.3, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.28);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.28);
+                });
+            },
+            playBoost() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(90, t);
+                osc.frequency.exponentialRampToValueAtTime(260, t + 0.15);
+                gain.gain.setValueAtTime(0.12, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(t);
+                osc.stop(t + 0.15);
+            }
+        };
+
+        // === Элементы DOM ===
         const sharkContainer = document.getElementById('shark-container');
         const sharkBody = document.getElementById('shark-body');
         const ocean = document.getElementById('ocean');
         const sharkLabel = document.getElementById('shark-label');
+        const shieldEl = document.getElementById('shield-aura');
         const gameOverScreen = document.getElementById('game-over');
+        const pauseOverlay = document.getElementById('pause-overlay');
+        const uiEl = document.getElementById('ui');
+        const scoreValEl = document.getElementById('score-val');
+        const bestValEl = document.getElementById('best-val');
+        const rankNameEl = document.getElementById('rank-name');
+        const rankBarFill = document.getElementById('rank-bar-fill');
+        const staminaBarFill = document.getElementById('stamina-bar-fill');
+        const activeBuffsEl = document.getElementById('active-buffs');
+        const soundBtn = document.getElementById('sound-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const boostBtn = document.getElementById('boost-btn');
         const joystickZone = document.getElementById('joystick-zone');
         const joystickBase = document.getElementById('joystick-base');
         const joystickThumb = document.getElementById('joystick-thumb');
@@ -613,15 +1401,14 @@
         const minimapViewport = document.getElementById('minimap-viewport');
         const minimapShark = document.getElementById('minimap-shark');
 
-        // Определяем тач-режим
+        // Тач-режим
         const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
         const WORLD_W = 6000;
         const WORLD_H = 4000;
-        const EDGE_MARGIN = 120;
         const CAM_MAX_SPEED = 14;
-        const MINIMAP_PADDING = 2;
 
+        // Состояние игры
         let score = 0;
         let sharkSize = 60;
         let posX = WORLD_W / 2;
@@ -634,6 +1421,38 @@
         let mouseScreenY = window.innerHeight / 2;
         let isBiting = false;
         let isGameOver = false;
+        let isPaused = false;
+        let gameStarted = false;
+
+        // Статистика сессии
+        let preyEaten = 0;
+        let rivalsEaten = 0;
+        let maxSizeAchieved = 60;
+
+        // Турбо-ускорение (Boost)
+        let boostEnergy = 100;
+        let isBoosting = false;
+        let boostKeyDown = false;
+
+        // Бонусы
+        let shieldActive = false;
+        let magnetTimer = 0;
+        let frenzyTimer = 0;
+
+        // Рекорд
+        let bestScore = parseInt(localStorage.getItem('sharkBestScore') || '0', 10);
+        bestValEl.innerText = bestScore;
+        soundBtn.innerText = Sound.muted ? '🔇' : '🔊';
+
+        // Эволюция акулы
+        const EVOLUTIONS = [
+            { minSize: 0, title: 'Малёк 🐟', next: 85 },
+            { minSize: 85, title: 'Рифовая акула 🦈', next: 140 },
+            { minSize: 140, title: 'Тигровая акула 🐅', next: 210 },
+            { minSize: 210, title: 'Белая акула ⚡', next: 300 },
+            { minSize: 300, title: 'МЕГАЛОДОН 👑', next: 600 }
+        ];
+        let currentEvoIndex = 0;
 
         // Джойстик
         let joystickActive = false;
@@ -643,14 +1462,81 @@
         let joystickDX = 0;
         let joystickDY = 0;
 
-        // Рекорд
-        let bestScore = parseInt(localStorage.getItem('sharkBestScore') || '0');
-
         const preyTypes = ['🐟', '🐠', '🐡', '🦐', '🦑', '🦞', '🐬', '🦀'];
         const enemyTypes = ['🐙', '🐳', '🐋', '💣'];
         const preys = [];
         const enemies = [];
         const rivals = [];
+        const powerups = [];
+
+        // === Обработка звука и паузы ===
+        soundBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isMuted = Sound.toggleMute();
+            soundBtn.innerText = isMuted ? '🔇' : '🔊';
+        });
+
+        function togglePause() {
+            if (isGameOver || !gameStarted) return;
+            isPaused = !isPaused;
+            pauseOverlay.style.display = isPaused ? 'flex' : 'none';
+            pauseBtn.innerText = isPaused ? '▶️' : '⏸️';
+            if (!isPaused) {
+                requestAnimationFrame(update);
+            }
+        }
+        pauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePause();
+        });
+        resumeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePause();
+        });
+
+        // === Турбо-ускорение (Спринт) ===
+        function setBoost(state) {
+            boostKeyDown = state;
+            if (state) boostBtn.classList.add('active');
+            else boostBtn.classList.remove('active');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === ' ' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+                setBoost(true);
+            }
+            if (e.code === 'Escape' || e.key === 'p' || e.key === 'P' || e.key === 'з' || e.key === 'З') {
+                togglePause();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' || e.key === ' ' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+                setBoost(false);
+            }
+        });
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                e.preventDefault();
+                setBoost(true);
+            }
+        });
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 2) setBoost(false);
+        });
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Мобильная кнопка турбо
+        boostBtn.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setBoost(true);
+        }, { passive: false });
+        boostBtn.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setBoost(false);
+        }, { passive: false });
+        boostBtn.addEventListener('touchcancel', () => setBoost(false));
 
         // === Ввод: мышь ===
         document.addEventListener('mousemove', (e) => {
@@ -662,7 +1548,7 @@
 
         // === Ввод: тач-джойстик ===
         function onJoystickStart(e) {
-            if (isGameOver) return;
+            if (isGameOver || isPaused) return;
             const touch = e.changedTouches[0];
             joystickTouchId = touch.identifier;
             joystickActive = true;
@@ -719,9 +1605,11 @@
             joystickZone.addEventListener('touchmove', onJoystickMove, { passive: false });
             joystickZone.addEventListener('touchend', onJoystickEnd, { passive: false });
             joystickZone.addEventListener('touchcancel', onJoystickEnd, { passive: false });
-            // Также ловим тач на всей странице на случай если пользователь касается выше зоны
+
             document.addEventListener('touchstart', (e) => {
-                if (!joystickActive && !isGameOver) {
+                // Игнорируем тачи по кнопкам интерфейса
+                if (e.target.closest('#ui, #boost-btn, #start-screen, #game-over, #pause-overlay, #minimap')) return;
+                if (!joystickActive && !isGameOver && !isPaused) {
                     onJoystickStart(e);
                 }
             }, { passive: false });
@@ -732,7 +1620,202 @@
             document.addEventListener('touchcancel', onJoystickEnd, { passive: false });
         }
 
-        // === Спавн ===
+        // === Визуальные эффекты и анимации ===
+        function triggerBite() {
+            if (isBiting) return;
+            isBiting = true;
+            sharkBody.classList.add('bite-anim');
+            setTimeout(() => {
+                sharkBody.classList.remove('bite-anim');
+                isBiting = false;
+            }, 200);
+        }
+
+        function triggerHeavyBite() {
+            isBiting = true;
+            sharkBody.classList.remove('bite-anim');
+            sharkBody.classList.add('heavy-bite-anim');
+            setTimeout(() => {
+                sharkBody.classList.remove('heavy-bite-anim');
+                isBiting = false;
+            }, 380);
+        }
+
+        let shakeTimeout = null;
+        function triggerScreenShake(intensity = 6, duration = 250) {
+            ocean.style.animation = 'none';
+            void ocean.offsetWidth;
+            ocean.style.animation = `screen-shake-anim ${duration}ms ease-out`;
+            clearTimeout(shakeTimeout);
+            shakeTimeout = setTimeout(() => {
+                ocean.style.animation = '';
+            }, duration);
+        }
+
+        function createFloatingText(text, x, y, isRival = false) {
+            const ft = document.createElement('div');
+            ft.className = 'floating-text' + (isRival ? ' rival-kill' : '');
+            ft.innerText = text;
+            ft.style.left = x + 'px';
+            ft.style.top = y + 'px';
+            ocean.appendChild(ft);
+            setTimeout(() => ft.remove(), 950);
+        }
+
+        function spawnShockwave(x, y) {
+            const sw = document.createElement('div');
+            sw.className = 'shockwave-ring';
+            sw.style.left = x + 'px';
+            sw.style.top = y + 'px';
+            sw.style.width = '130px';
+            sw.style.height = '130px';
+            ocean.appendChild(sw);
+            setTimeout(() => sw.remove(), 420);
+        }
+
+        function spawnBiteParticles(x, y, size) {
+            const count = 16;
+            const colors = ['#ff2233', '#d6001c', '#ff5252', '#800010', '#ffffff'];
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'blood-particle';
+                const pSize = 5 + Math.random() * 10;
+                p.style.width = pSize + 'px';
+                p.style.height = pSize + 'px';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                ocean.appendChild(p);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 25 + Math.random() * 75;
+                const destX = Math.cos(angle) * dist;
+                const destY = Math.sin(angle) * dist;
+                const dur = 400 + Math.random() * 350;
+
+                p.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${destX}px), calc(-50% + ${destY}px)) scale(${0.2 + Math.random() * 0.4})`, opacity: 0 }
+                ], {
+                    duration: dur,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                    fill: 'forwards'
+                });
+
+                setTimeout(() => p.remove(), dur + 40);
+            }
+
+            // Кусочки мяса и кости
+            const meats = ['🥩', '🍖', '🦴', '💥'];
+            for (let i = 0; i < 4; i++) {
+                const m = document.createElement('div');
+                m.className = 'meat-chunk';
+                m.innerText = meats[Math.floor(Math.random() * meats.length)];
+                m.style.fontSize = (16 + Math.random() * 12) + 'px';
+                m.style.left = x + 'px';
+                m.style.top = y + 'px';
+                ocean.appendChild(m);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 35 + Math.random() * 65;
+                const destX = Math.cos(angle) * dist;
+                const destY = Math.sin(angle) * dist - 25;
+                const rot = (Math.random() - 0.5) * 540;
+                const dur = 500 + Math.random() * 300;
+
+                m.animate([
+                    { transform: 'translate(-50%, -50%) scale(0.6) rotate(0deg)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${destX}px), calc(-50% + ${destY}px)) scale(1.1) rotate(${rot}deg)`, opacity: 0 }
+                ], {
+                    duration: dur,
+                    easing: 'ease-out',
+                    fill: 'forwards'
+                });
+
+                setTimeout(() => m.remove(), dur + 40);
+            }
+        }
+
+        function spawnBoostBubble(x, y) {
+            const b = document.createElement('div');
+            b.className = 'boost-bubble';
+            const s = 10 + Math.random() * 16;
+            b.style.width = s + 'px';
+            b.style.height = s + 'px';
+            b.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
+            b.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
+            ocean.appendChild(b);
+            setTimeout(() => b.remove(), 650);
+        }
+
+        // === Обновление интерфейса и эволюции ===
+        function updateHUD(scoreGained = 0) {
+            scoreValEl.innerText = score;
+            if (scoreGained > 0) {
+                scoreValEl.classList.remove('bump');
+                void scoreValEl.offsetWidth;
+                scoreValEl.classList.add('bump');
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                bestValEl.innerText = bestScore;
+                localStorage.setItem('sharkBestScore', bestScore);
+            }
+
+            maxSizeAchieved = Math.max(maxSizeAchieved, Math.floor(sharkSize));
+            sharkLabel.innerText = Math.floor(sharkSize);
+
+            // Прогресс эволюции
+            const currentEvo = EVOLUTIONS[currentEvoIndex];
+            const nextEvo = EVOLUTIONS[currentEvoIndex + 1];
+            if (nextEvo) {
+                const range = nextEvo.minSize - currentEvo.minSize;
+                const currentProg = Math.max(0, sharkSize - currentEvo.minSize);
+                const percent = Math.min(100, (currentProg / range) * 100);
+                rankBarFill.style.width = percent + '%';
+            } else {
+                rankBarFill.style.width = '100%';
+            }
+        }
+
+        function checkEvolution() {
+            for (let i = EVOLUTIONS.length - 1; i >= 0; i--) {
+                if (sharkSize >= EVOLUTIONS[i].minSize) {
+                    if (i > currentEvoIndex) {
+                        currentEvoIndex = i;
+                        rankNameEl.innerText = EVOLUTIONS[i].title;
+                        Sound.playLevelUp();
+                        triggerScreenShake(7, 300);
+                        createFloatingText(`ЭВОЛЮЦИЯ: ${EVOLUTIONS[i].title}`, posX, posY, true);
+                    }
+                    break;
+                }
+            }
+        }
+
+        function updateBuffsHUD() {
+            activeBuffsEl.innerHTML = '';
+            if (shieldActive) {
+                const b = document.createElement('div');
+                b.className = 'buff-pill';
+                b.innerHTML = '🛡️ ЩИТ АКТИВЕН';
+                activeBuffsEl.appendChild(b);
+            }
+            if (magnetTimer > 0) {
+                const b = document.createElement('div');
+                b.className = 'buff-pill';
+                b.innerHTML = `🧲 МАГНИТ: ${Math.ceil(magnetTimer)}с`;
+                activeBuffsEl.appendChild(b);
+            }
+            if (frenzyTimer > 0) {
+                const b = document.createElement('div');
+                b.className = 'buff-pill';
+                b.innerHTML = `⚡ ЯРОСТЬ x2: ${Math.ceil(frenzyTimer)}с`;
+                activeBuffsEl.appendChild(b);
+            }
+        }
+
+        // === Спавн элементов ===
         function randomSpawnPoint(margin = 300) {
             const x0 = Math.max(0, worldX - margin);
             const x1 = Math.min(WORLD_W, worldX + window.innerWidth + margin);
@@ -802,7 +1885,8 @@
         }
 
         function spawnPrey() {
-            if (isGameOver) return;
+            if (isGameOver || !gameStarted || isPaused) return;
+            if (preys.length > 50) return;
             const prey = document.createElement('div');
             prey.className = 'prey';
             prey.innerText = preyTypes[Math.floor(Math.random() * preyTypes.length)];
@@ -823,7 +1907,8 @@
         }
 
         function spawnEnemy() {
-            if (isGameOver) return;
+            if (isGameOver || !gameStarted || isPaused) return;
+            if (enemies.length > 14) return;
             const enemy = document.createElement('div');
             enemy.className = 'enemy';
             enemy.innerText = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
@@ -843,9 +1928,277 @@
             });
         }
 
+        // === Конкуренты (AI Rivals) ===
+        const rivalTypes = ['🦈', '🐅', '🦈'];
+        const RIVAL_START_SIZE = 28;
+
+        function spawnRival() {
+            if (isGameOver || !gameStarted || isPaused) return;
+            if (rivals.length >= 8) return;
+            const container = document.createElement('div');
+            container.className = 'rival';
+            const svg = document.createElement('div');
+            svg.innerText = rivalTypes[Math.floor(Math.random() * rivalTypes.length)];
+            svg.style.fontSize = RIVAL_START_SIZE + 'px';
+            svg.style.transform = 'translateY(-50%)';
+            container.appendChild(svg);
+
+            const label = document.createElement('div');
+            label.className = 'rival-label';
+            label.innerText = RIVAL_START_SIZE;
+
+            const sp = randomSpawnPoint(60);
+            let rx = sp.x, ry = sp.y;
+            const away = Math.atan2(ry - posY, rx - posX);
+            rx += Math.cos(away) * 150;
+            ry += Math.sin(away) * 150;
+
+            ocean.appendChild(container);
+            ocean.appendChild(label);
+            rivals.push({
+                element: container,
+                svg: svg,
+                label: label,
+                x: rx, y: ry,
+                vx: 0, vy: 0,
+                size: RIVAL_START_SIZE,
+                dying: false
+            });
+        }
+
+        // Поедание соперника игроком с яркой анимацией
+        function devourRival(r, index) {
+            if (r.dying) return;
+            r.dying = true;
+
+            // Звук сочного хруста
+            Sound.playCrunch();
+
+            // Анимация мощного броска и укуса
+            triggerHeavyBite();
+
+            // Тряска экрана
+            triggerScreenShake(8, 280);
+
+            // Всплывающий яркий текст
+            const pts = frenzyTimer > 0 ? 200 : 100;
+            createFloatingText(`ХРУМ! +${pts} 🦈`, r.x, r.y, true);
+
+            // Ударная волна укуса
+            spawnShockwave(r.x, r.y);
+
+            // Кровавые брызги и разлетающиеся куски
+            spawnBiteParticles(r.x, r.y, r.size);
+
+            // Анимация разрывания элемента соперника
+            r.element.classList.add('rival-crunching');
+            if (r.label) r.label.style.display = 'none';
+
+            // Начисление очков и рост
+            score += pts;
+            rivalsEaten++;
+            sharkSize = Math.min(600, sharkSize + 8);
+            updateHUD(pts);
+            checkEvolution();
+
+            // Окончательное удаление через 380мс
+            setTimeout(() => {
+                if (r.element && r.element.parentNode) r.element.remove();
+                if (r.label && r.label.parentNode) r.label.remove();
+            }, 380);
+
+            rivals.splice(index, 1);
+        }
+
+        function updateRivals() {
+            for (let i = rivals.length - 1; i >= 0; i--) {
+                const r = rivals[i];
+                if (r.dying) continue;
+
+                const distToShark = Math.hypot(posX - r.x, posY - r.y);
+
+                // Индикатор опасности соперника для игрока
+                const isDangerous = r.size > sharkSize * 1.1;
+                if (isDangerous) {
+                    r.label.classList.add('danger');
+                    r.label.innerText = '⚠️ ' + Math.floor(r.size);
+                    // Опасный соперник может преследовать игрока, если подобрался близко
+                    if (distToShark < 340) {
+                        const chaseX = posX - r.x;
+                        const chaseY = posY - r.y;
+                        const mag = Math.hypot(chaseX, chaseY) || 1;
+                        r.vx += (chaseX / mag) * 0.22;
+                        r.vy += (chaseY / mag) * 0.22;
+                    }
+                } else {
+                    r.label.classList.remove('danger');
+                    r.label.innerText = Math.floor(r.size);
+                    // Если соперник меньше — убегает от игрока
+                    if (distToShark < Math.min(sharkSize, 220) + r.size * 1.5) {
+                        const runX = r.x - posX;
+                        const runY = r.y - posY;
+                        const mag = Math.hypot(runX, runY) || 1;
+                        r.vx += (runX / mag) * 0.32;
+                        r.vy += (runY / mag) * 0.32;
+                    }
+                }
+
+                // Поиск ближайшей рыбки-добычи
+                let nearestPrey = null;
+                let nearestDist = Infinity;
+                for (const p of preys) {
+                    const d = Math.hypot(r.x - p.x, r.y - p.y);
+                    if (d < nearestDist) { nearestDist = d; nearestPrey = p; }
+                }
+                if (nearestPrey && nearestDist < 320 && !isDangerous) {
+                    const dx = nearestPrey.x - r.x;
+                    const dy = nearestPrey.y - r.y;
+                    const mag = Math.hypot(dx, dy) || 1;
+                    r.vx += (dx / mag) * 0.14;
+                    r.vy += (dy / mag) * 0.14;
+                }
+
+                const speed = Math.hypot(r.vx, r.vy);
+                const maxSpeed = 1.9 + (r.size / RIVAL_START_SIZE) * 0.35;
+                if (speed > maxSpeed) {
+                    r.vx = (r.vx / speed) * maxSpeed;
+                    r.vy = (r.vy / speed) * maxSpeed;
+                }
+                r.x += r.vx;
+                r.y += r.vy;
+                if (r.x < 0 || r.x > WORLD_W - 50) r.vx *= -1;
+                if (r.y < 0 || r.y > WORLD_H - 50) r.vy *= -1;
+
+                const ang = Math.atan2(r.vy, r.vx) * (180 / Math.PI);
+                const rivalFlip = Math.abs(ang) > 90;
+                r.element.style.left = `${r.x}px`;
+                r.element.style.top = `${r.y}px`;
+                r.element.style.transform = `rotate(${ang}deg) scaleY(${rivalFlip ? -1 : 1})`;
+                r.label.style.left = `${r.x}px`;
+                r.label.style.top = `${r.y + r.size * 0.58}px`;
+
+                // Соперник поедает рыбок
+                for (let j = preys.length - 1; j >= 0; j--) {
+                    const p = preys[j];
+                    if (Math.hypot(r.x - p.x, r.y - p.y) < (r.size / 2 + 14)) {
+                        ocean.removeChild(p.element);
+                        preys.splice(j, 1);
+                        r.size += 1.8;
+                        r.svg.style.fontSize = r.size + 'px';
+                        r.label.innerText = Math.floor(r.size);
+                        triggerRivalEvolve(r);
+                    }
+                }
+
+                // Взаимодействие игрока с соперником
+                if (distToShark < (sharkSize * 0.45 + r.size * 0.3)) {
+                    if (frenzyTimer > 0 || !isDangerous) {
+                        // Игрок съедает соперника!
+                        devourRival(r, i);
+                    } else {
+                        // Опасный гигантский соперник нападает на игрока!
+                        if (shieldActive) {
+                            shieldActive = false;
+                            updateBuffsHUD();
+                            Sound.playCrunch();
+                            triggerScreenShake(10, 300);
+                            createFloatingText('ЩИТ СПАС! 🛡️', posX, posY, true);
+                            posX += (posX - r.x) * 1.3;
+                            posY += (posY - r.y) * 1.3;
+                        } else {
+                            endGame(`Вас сокрушил гигантский соперник ${r.svg.innerText}!`);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function triggerRivalEvolve(r) {
+            r.element.style.transition = 'filter 0.25s ease';
+            r.element.style.filter = 'brightness(1.8)';
+            setTimeout(() => { r.element.style.filter = ''; }, 250);
+        }
+
+        // === Бонусы (Power-ups) ===
+        const powerupConfigs = [
+            { type: 'shield', icon: '🛡️', title: 'ЩИТ' },
+            { type: 'magnet', icon: '🧲', title: 'МАГНИТ' },
+            { type: 'frenzy', icon: '⚡', title: 'ЯРОСТЬ' }
+        ];
+
+        function spawnPowerup() {
+            if (isGameOver || !gameStarted || isPaused || powerups.length >= 2) return;
+            const cfg = powerupConfigs[Math.floor(Math.random() * powerupConfigs.length)];
+            const el = document.createElement('div');
+            el.className = 'powerup-item';
+            el.innerText = cfg.icon;
+            const sp = randomSpawnPoint(100);
+            el.style.left = sp.x + 'px';
+            el.style.top = sp.y + 'px';
+            ocean.appendChild(el);
+            powerups.push({
+                element: el,
+                type: cfg.type,
+                title: cfg.title,
+                icon: cfg.icon,
+                x: sp.x,
+                y: sp.y,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: -0.35 - Math.random() * 0.4
+            });
+        }
+
+        function collectPowerup(p, index) {
+            Sound.playPowerup();
+            createFloatingText(`+${p.title}! ${p.icon}`, p.x, p.y, true);
+            spawnShockwave(p.x, p.y);
+            score += 40;
+            updateHUD(40);
+
+            if (p.type === 'shield') {
+                shieldActive = true;
+            } else if (p.type === 'magnet') {
+                magnetTimer = 10;
+            } else if (p.type === 'frenzy') {
+                frenzyTimer = 7;
+            }
+            updateBuffsHUD();
+
+            p.element.remove();
+            powerups.splice(index, 1);
+        }
+
+        function updatePowerups(dt) {
+            if (magnetTimer > 0) {
+                magnetTimer = Math.max(0, magnetTimer - dt);
+                if (magnetTimer === 0) updateBuffsHUD();
+            }
+            if (frenzyTimer > 0) {
+                frenzyTimer = Math.max(0, frenzyTimer - dt);
+                if (frenzyTimer === 0) updateBuffsHUD();
+            }
+
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const pu = powerups[i];
+                pu.x += pu.vx;
+                pu.y += pu.vy;
+                if (pu.x < 0 || pu.x > WORLD_W - 40) pu.vx *= -1;
+                if (pu.y < 0) pu.y = WORLD_H - 100;
+                pu.element.style.left = pu.x + 'px';
+                pu.element.style.top = pu.y + 'px';
+
+                const dist = Math.hypot(posX - pu.x, posY - pu.y);
+                if (dist < (sharkSize / 2 + 25)) {
+                    collectPowerup(pu, i);
+                }
+            }
+        }
+
         // === Мини-карта ===
         let minimapPreyEls = [];
         let minimapEnemyEls = [];
+        let minimapRivalEls = [];
 
         function updateMinimap() {
             const mmW = minimapEl.clientWidth;
@@ -853,7 +2206,7 @@
             const scaleX = mmW / WORLD_W;
             const scaleY = mmH / WORLD_H;
 
-            // Видимая область
+            // Видимая область камеры
             const vw = (window.innerWidth / WORLD_W) * mmW;
             const vh = (window.innerHeight / WORLD_H) * mmH;
             const vx = worldX * scaleX;
@@ -896,46 +2249,55 @@
                 minimapEnemyEls[i].style.left = (enemies[i].x * scaleX) + 'px';
                 minimapEnemyEls[i].style.top = (enemies[i].y * scaleY) + 'px';
             }
+
+            // Соперники
+            while (minimapRivalEls.length < rivals.length) {
+                const d = document.createElement('div');
+                d.className = 'minimap-rival';
+                minimapEl.appendChild(d);
+                minimapRivalEls.push(d);
+            }
+            while (minimapRivalEls.length > rivals.length) {
+                minimapRivalEls.pop().remove();
+            }
+            for (let i = 0; i < rivals.length; i++) {
+                minimapRivalEls[i].style.left = (rivals[i].x * scaleX) + 'px';
+                minimapRivalEls[i].style.top = (rivals[i].y * scaleY) + 'px';
+            }
         }
 
-        // === Основной цикл ===
+        // === Основной игровой цикл ===
+        let lastTimestamp = performance.now();
         let minimapFrame = 0;
 
-        function update() {
-            if (isGameOver) return;
+        function update(now = performance.now()) {
+            if (isGameOver || isPaused) return;
 
-            // === Камера ===
-            let camDX = 0, camDY = 0;
+            const dt = Math.min(0.1, (now - lastTimestamp) / 1000);
+            lastTimestamp = now;
 
-            if (joystickActive) {
-                // На мобильных джойстик двигает камеру
-                const joySpeed = CAM_MAX_SPEED * 1.2;
-                camDX = joystickDX * joySpeed;
-                camDY = joystickDY * joySpeed;
+            // Турбо-ускорение (Stamina)
+            if (boostKeyDown && boostEnergy > 4) {
+                isBoosting = true;
+                boostEnergy = Math.max(0, boostEnergy - 32 * dt);
+                if (Math.random() < 0.35) Sound.playBoost();
             } else {
-                if (mouseScreenX < EDGE_MARGIN) camDX = -(1 - mouseScreenX / EDGE_MARGIN) * CAM_MAX_SPEED;
-                else if (mouseScreenX > window.innerWidth - EDGE_MARGIN) camDX = (1 - (window.innerWidth - mouseScreenX) / EDGE_MARGIN) * CAM_MAX_SPEED;
-                if (mouseScreenY < EDGE_MARGIN) camDY = -(1 - mouseScreenY / EDGE_MARGIN) * CAM_MAX_SPEED;
-                else if (mouseScreenY > window.innerHeight - EDGE_MARGIN) camDY = (1 - (window.innerHeight - mouseScreenY) / EDGE_MARGIN) * CAM_MAX_SPEED;
+                isBoosting = false;
+                boostEnergy = Math.min(100, boostEnergy + 18 * dt);
             }
+            staminaBarFill.style.width = boostEnergy + '%';
 
-            if (camDX !== 0 || camDY !== 0) {
-                worldX = Math.min(Math.max(worldX + camDX, 0), Math.max(0, WORLD_W - window.innerWidth));
-                worldY = Math.min(Math.max(worldY + camDY, 0), Math.max(0, WORLD_H - window.innerHeight));
-            }
+            // Расчёт скорости акулы
+            const speedMultiplier = (isBoosting ? 1.75 : 1.0) * (frenzyTimer > 0 ? 1.25 : 1.0);
 
-            ocean.style.transform = `translate(${-worldX}px, ${-worldY}px)`;
-
-            // === Акула ===
+            // Камера и позиционирование
             if (joystickActive) {
-                // На мобильных: акула плывёт вслед за джойстиком,
-                // камера следует за акулой (акула всегда в центре экрана)
-                const moveSpeed = 5;
+                const moveSpeed = 5 * speedMultiplier;
                 posX += joystickDX * moveSpeed;
                 posY += joystickDY * moveSpeed;
                 targetX = posX;
                 targetY = posY;
-                // Камера: центрируем на акуле
+
                 worldX = Math.min(Math.max(posX - window.innerWidth / 2, 0), WORLD_W - window.innerWidth);
                 worldY = Math.min(Math.max(posY - window.innerHeight / 2, 0), WORLD_H - window.innerHeight);
                 mouseScreenX = window.innerWidth / 2;
@@ -943,13 +2305,23 @@
             } else {
                 targetX = mouseScreenX + worldX;
                 targetY = mouseScreenY + worldY;
-                posX += (targetX - posX) * 0.08;
-                posY += (targetY - posY) * 0.08;
+                const ease = (isBoosting ? 0.12 : 0.08);
+                posX += (targetX - posX) * ease;
+                posY += (targetY - posY) * ease;
+
+                // Плавное следование камеры за акулой на ПК
+                const targetCamX = posX - window.innerWidth / 2;
+                const targetCamY = posY - window.innerHeight / 2;
+                worldX += (targetCamX - worldX) * 0.08;
+                worldY += (targetCamY - worldY) * 0.08;
+                worldX = Math.min(Math.max(worldX, 0), Math.max(0, WORLD_W - window.innerWidth));
+                worldY = Math.min(Math.max(worldY, 0), Math.max(0, WORLD_H - window.innerHeight));
             }
 
             posX = Math.min(Math.max(posX, 20), WORLD_W - 20);
             posY = Math.min(Math.max(posY, 20), WORLD_H - 20);
 
+            // Поворот акулы с предотвращением переворота вверх тормашками (scaleY)
             const dx = targetX - posX;
             const dy = targetY - posY;
             let angle;
@@ -961,17 +2333,58 @@
 
             const currentW = 100 * (sharkSize / 60);
             const currentH = 60 * (sharkSize / 60);
+            const isFacingLeft = Math.abs(angle) > 90;
+
+            ocean.style.transform = `translate(${-worldX}px, ${-worldY}px)`;
 
             sharkContainer.style.left = `${posX - currentW / 2}px`;
             sharkContainer.style.top = `${posY - currentH / 2}px`;
-            sharkContainer.style.transform = `rotate(${angle}deg)`;
+            sharkContainer.style.transform = `rotate(${angle}deg) scaleY(${isFacingLeft ? -1 : 1})`;
             sharkBody.style.width = `${currentW}px`;
             sharkBody.style.height = `${currentH}px`;
+
+            if (frenzyTimer > 0) {
+                sharkBody.style.filter = 'drop-shadow(0 0 16px #ffd700) brightness(1.3)';
+            } else {
+                sharkBody.style.filter = '';
+            }
 
             sharkLabel.style.left = `${posX}px`;
             sharkLabel.style.top = `${posY + currentH * 0.62}px`;
 
-            // === Добыча ===
+            // Щит вокруг акулы
+            if (shieldActive) {
+                shieldEl.style.display = 'block';
+                shieldEl.style.left = posX + 'px';
+                shieldEl.style.top = posY + 'px';
+                shieldEl.style.width = (currentW * 1.35) + 'px';
+                shieldEl.style.height = (currentW * 1.35) + 'px';
+            } else {
+                shieldEl.style.display = 'none';
+            }
+
+            // Шлейф пузырьков при турбо
+            if (isBoosting && Math.random() < 0.6) {
+                const rad = angle * (Math.PI / 180);
+                const tailX = posX - Math.cos(rad) * (currentW * 0.45);
+                const tailY = posY - Math.sin(rad) * (currentW * 0.45);
+                spawnBoostBubble(tailX, tailY);
+            }
+
+            // Действие магнита: притягиваем рыбок
+            if (magnetTimer > 0) {
+                for (const p of preys) {
+                    const mdx = posX - p.x;
+                    const mdy = posY - p.y;
+                    const md = Math.hypot(mdx, mdy);
+                    if (md < 480 && md > 10) {
+                        p.vx += (mdx / md) * 0.55;
+                        p.vy += (mdy / md) * 0.55;
+                    }
+                }
+            }
+
+            // === Обработка добычи ===
             for (let i = preys.length - 1; i >= 0; i--) {
                 const p = preys[i];
                 const distToShark = Math.hypot(posX - p.x, posY - p.y);
@@ -998,16 +2411,21 @@
                 p.element.style.transform = `rotate(${p.angle}deg)`;
 
                 if (distToShark < sharkSize / 1.5) {
+                    Sound.playChomp();
+                    const gain = frenzyTimer > 0 ? 20 : 10;
+                    createFloatingText(`+${gain}`, p.x, p.y, false);
                     ocean.removeChild(p.element);
                     preys.splice(i, 1);
-                    score += 10;
-                    sharkSize += 2;
-                    sharkLabel.innerText = Math.floor(sharkSize);
+                    score += gain;
+                    preyEaten++;
+                    sharkSize += 1.8;
+                    updateHUD(gain);
+                    checkEvolution();
                     triggerBite();
                 }
             }
 
-            // === Враги ===
+            // === Обработка врагов ===
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
                 const distToShark = Math.hypot(posX - e.x, posY - e.y);
@@ -1041,156 +2459,153 @@
 
                 if (distToShark < sharkSize / 2) {
                     if (e.element.innerText === '💣') {
-                        endGame();
-                    } else {
-                        const enemyDangerSize = 120;
-                        if (sharkSize < enemyDangerSize) {
-                            endGame();
-                        } else {
+                        if (shieldActive) {
+                            shieldActive = false;
+                            updateBuffsHUD();
+                            Sound.playExplosion();
+                            triggerScreenShake(10, 320);
+                            spawnShockwave(e.x, e.y);
+                            createFloatingText('ЩИТ СПАС! 🛡️', posX, posY, true);
                             ocean.removeChild(e.element);
                             enemies.splice(i, 1);
-                            score += 50;
+                            continue;
+                        } else if (frenzyTimer > 0) {
+                            Sound.playExplosion();
+                            triggerScreenShake(8, 250);
+                            spawnShockwave(e.x, e.y);
+                            createFloatingText('+100 💥', e.x, e.y, true);
+                            score += 100;
+                            updateHUD(100);
+                            ocean.removeChild(e.element);
+                            enemies.splice(i, 1);
+                            continue;
+                        } else {
+                            Sound.playExplosion();
+                            triggerScreenShake(14, 450);
+                            spawnShockwave(e.x, e.y);
+                            endGame('Подорвался на глубоководной мине! 💣');
+                            return;
+                        }
+                    } else {
+                        const enemyDangerSize = 120;
+                        if (sharkSize < enemyDangerSize && frenzyTimer <= 0) {
+                            if (shieldActive) {
+                                shieldActive = false;
+                                updateBuffsHUD();
+                                Sound.playCrunch();
+                                triggerScreenShake(9, 280);
+                                createFloatingText('ЩИТ ПОГЛОТИЛ УДАР! 🛡️', posX, posY, true);
+                                posX += (posX - e.x) * 1.3;
+                                posY += (posY - e.y) * 1.3;
+                                continue;
+                            }
+                            endGame(`Вас проглотил опасный обитатель глубин ${e.element.innerText}!`);
+                            return;
+                        } else {
+                            // Игрок съедает крупного врага!
+                            Sound.playCrunch();
+                            triggerHeavyBite();
+                            triggerScreenShake(7, 260);
+                            spawnBiteParticles(e.x, e.y, 40);
+                            const pts = frenzyTimer > 0 ? 100 : 50;
+                            createFloatingText(`+${pts}`, e.x, e.y, true);
+                            ocean.removeChild(e.element);
+                            enemies.splice(i, 1);
+                            score += pts;
+                            preyEaten++;
                             sharkSize += 5;
-                            sharkLabel.innerText = Math.floor(sharkSize);
-                            triggerBite();
+                            updateHUD(pts);
+                            checkEvolution();
                         }
                     }
                 }
             }
 
             updateRivals();
+            updatePowerups(dt);
 
-            // Мини-карта каждые 3 кадра
+            // Мини-карта
             minimapFrame++;
             if (minimapFrame % 3 === 0) updateMinimap();
 
             requestAnimationFrame(update);
         }
 
-        function triggerBite() {
-            if (isBiting) return;
-            isBiting = true;
-            sharkBody.classList.add('bite-anim');
-            setTimeout(() => {
-                sharkBody.classList.remove('bite-anim');
-                isBiting = false;
-            }, 200);
-        }
-
-        // === Конкуренты ===
-        const rivalTypes = ['🦈', '🐅', '🐅'];
-        const RIVAL_START_SIZE = 26;
-
-        function spawnRival() {
-            if (isGameOver) return;
-            if (rivals.length > 8) return;
-            const container = document.createElement('div');
-            container.className = 'rival';
-            const svg = document.createElement('div');
-            svg.innerText = rivalTypes[Math.floor(Math.random() * rivalTypes.length)];
-            svg.style.fontSize = RIVAL_START_SIZE + 'px';
-            svg.style.transform = 'translateY(-50%)';
-            container.appendChild(svg);
-            const label = document.createElement('div');
-            label.className = 'rival-label';
-            label.innerText = RIVAL_START_SIZE;
-            const sp = randomSpawnPoint(60);
-            let rx = sp.x, ry = sp.y;
-            const away = Math.atan2(ry - posY, rx - posX);
-            rx += Math.cos(away) * 120;
-            ry += Math.sin(away) * 120;
-            ocean.appendChild(container);
-            ocean.appendChild(label);
-            rivals.push({
-                element: container,
-                svg: svg,
-                label: label,
-                x: rx, y: ry,
-                vx: 0, vy: 0,
-                size: RIVAL_START_SIZE
-            });
-        }
-
-        function updateRivals() {
-            for (let i = rivals.length - 1; i >= 0; i--) {
-                const r = rivals[i];
-                const distToShark = Math.hypot(posX - r.x, posY - r.y);
-                let nearestPrey = null;
-                let nearestDist = Infinity;
-                for (const p of preys) {
-                    const d = Math.hypot(r.x - p.x, r.y - p.y);
-                    if (d < nearestDist) { nearestDist = d; nearestPrey = p; }
-                }
-                if (nearestPrey && nearestDist < 320) {
-                    const dx = nearestPrey.x - r.x;
-                    const dy = nearestPrey.y - r.y;
-                    const mag = Math.hypot(dx, dy) || 1;
-                    r.vx += (dx / mag) * 0.12;
-                    r.vy += (dy / mag) * 0.12;
-                }
-                if (distToShark < Math.min(sharkSize, 200) + r.size * 1.5) {
-                    const dx = r.x - posX;
-                    const dy = r.y - posY;
-                    const mag = Math.hypot(dx, dy) || 1;
-                    r.vx += (dx / mag) * 0.3;
-                    r.vy += (dy / mag) * 0.3;
-                }
-                const speed = Math.hypot(r.vx, r.vy);
-                const maxSpeed = 1.8 + (r.size / RIVAL_START_SIZE) * 0.4;
-                if (speed > maxSpeed) {
-                    r.vx = (r.vx / speed) * maxSpeed;
-                    r.vy = (r.vy / speed) * maxSpeed;
-                }
-                r.x += r.vx;
-                r.y += r.vy;
-                if (r.x < 0 || r.x > WORLD_W - 50) r.vx *= -1;
-                if (r.y < 0 || r.y > WORLD_H - 50) r.vy *= -1;
-                const ang = Math.atan2(r.vy, r.vx) * (180 / Math.PI);
-                r.element.style.left = `${r.x}px`;
-                r.element.style.top = `${r.y}px`;
-                r.element.style.transform = `rotate(${ang}deg)`;
-                r.label.style.left = `${r.x}px`;
-                r.label.style.top = `${r.y + r.size * 0.55}px`;
-                for (let j = preys.length - 1; j >= 0; j--) {
-                    const p = preys[j];
-                    if (Math.hypot(r.x - p.x, r.y - p.y) < (r.size / 2 + 14)) {
-                        ocean.removeChild(p.element);
-                        preys.splice(j, 1);
-                        r.size += 1.6;
-                        r.svg.style.fontSize = r.size + 'px';
-                        r.label.innerText = Math.floor(r.size);
-                        triggerRivalEvolve(r);
-                    }
-                }
-                if (distToShark < sharkSize / 1.3) {
-                    ocean.removeChild(r.element);
-                    ocean.removeChild(r.label);
-                    rivals.splice(i, 1);
-                    if (sharkSize < 500) {
-                        sharkSize += 2;
-                        sharkLabel.innerText = Math.floor(sharkSize);
-                    }
-                }
-            }
-        }
-
-        function triggerRivalEvolve(r) {
-            r.element.style.transition = 'filter 0.25s ease';
-            r.element.style.filter = 'brightness(1.8)';
-            setTimeout(() => { r.element.style.filter = ''; }, 250);
-        }
-
-        function endGame() {
+        function endGame(reason = 'Вы погибли в пучине океана!') {
             isGameOver = true;
+            Sound.playGameOver();
             if (score > bestScore) {
                 bestScore = score;
                 localStorage.setItem('sharkBestScore', bestScore);
             }
+
+            document.getElementById('go-reason').innerText = reason;
+            document.getElementById('go-score').innerText = score;
+            document.getElementById('go-best').innerText = bestScore;
+            document.getElementById('go-prey').innerText = preyEaten;
+            document.getElementById('go-rivals').innerText = rivalsEaten;
+
             gameOverScreen.style.display = 'flex';
         }
 
+        // Чистый перезапуск без мерцания и перезагрузки страницы
+        function restartGame() {
+            isGameOver = false;
+            gameOverScreen.style.display = 'none';
+
+            score = 0;
+            sharkSize = 60;
+            preyEaten = 0;
+            rivalsEaten = 0;
+            maxSizeAchieved = 60;
+            currentEvoIndex = 0;
+            boostEnergy = 100;
+            shieldActive = false;
+            magnetTimer = 0;
+            frenzyTimer = 0;
+
+            rankNameEl.innerText = EVOLUTIONS[0].title;
+            rankBarFill.style.width = '0%';
+            staminaBarFill.style.width = '100%';
+
+            // Очистка сущностей
+            for (const p of preys) p.element.remove();
+            preys.length = 0;
+            for (const e of enemies) e.element.remove();
+            enemies.length = 0;
+            for (const r of rivals) {
+                r.element.remove();
+                if (r.label) r.label.remove();
+            }
+            rivals.length = 0;
+            for (const pu of powerups) pu.element.remove();
+            powerups.length = 0;
+
+            // Позиции
+            posX = WORLD_W / 2;
+            posY = WORLD_H / 2;
+            targetX = posX;
+            targetY = posY;
+            worldX = WORLD_W / 2 - window.innerWidth / 2;
+            worldY = Math.max(0, WORLD_H * 0.18 - window.innerHeight / 2);
+
+            for (let i = 0; i < 12; i++) spawnPrey();
+            for (let i = 0; i < 3; i++) spawnEnemy();
+            for (let i = 0; i < 3; i++) spawnRival();
+
+            updateHUD();
+            updateBuffsHUD();
+            lastTimestamp = performance.now();
+            requestAnimationFrame(update);
+        }
+
+        restartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            restartGame();
+        });
+
         function createBubble() {
-            if (isGameOver) return;
+            if (isGameOver || isPaused) return;
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
             const size = Math.random() * 20 + 10 + 'px';
@@ -1205,7 +2620,7 @@
         }
 
         function createGlint() {
-            if (isGameOver) return;
+            if (isGameOver || isPaused) return;
             if (worldY > WORLD_H * 0.5) return;
             const glint = document.createElement('div');
             glint.className = 'glint';
@@ -1223,7 +2638,6 @@
         // === Стартовая заставка ===
         const startScreen = document.getElementById('start-screen');
         const startBtn = document.getElementById('start-btn');
-        let gameStarted = false;
 
         function createStartBubble() {
             const b = document.createElement('div');
@@ -1244,11 +2658,30 @@
         function startGame() {
             if (gameStarted) return;
             gameStarted = true;
+            Sound.init();
             startScreen.style.transition = 'opacity 0.5s ease';
             startScreen.style.opacity = '0';
             setTimeout(() => {
                 startScreen.style.display = 'none';
             }, 500);
+
+            uiEl.style.display = 'flex';
+            updateHUD();
+
+            setInterval(spawnPrey, 1400);
+            setInterval(spawnEnemy, 5000);
+            setInterval(spawnRival, 4200);
+            setInterval(spawnPowerup, 18000);
+            setInterval(createBubble, 400);
+            setInterval(createGlint, 250);
+
+            spawnWorldDecor();
+            for (let i = 0; i < 12; i++) spawnPrey();
+            for (let i = 0; i < 3; i++) spawnEnemy();
+            for (let i = 0; i < 3; i++) spawnRival();
+
+            lastTimestamp = performance.now();
+            requestAnimationFrame(update);
         }
 
         startBtn.addEventListener('click', (e) => {
@@ -1256,17 +2689,6 @@
             startGame();
         });
         startScreen.addEventListener('click', startGame);
-
-        // Игровой цикл запускается сразу, но ничего не видно за заставкой
-        setInterval(spawnPrey, 1500);
-        setInterval(spawnEnemy, 5000);
-        setInterval(spawnRival, 4000);
-        setInterval(createBubble, 400);
-        setInterval(createGlint, 250);
-        spawnWorldDecor();
-        for (let i = 0; i < 10; i++) spawnPrey();
-        for (let i = 0; i < 3; i++) spawnEnemy();
-        update();
     </script>
 </body>
 </html>
