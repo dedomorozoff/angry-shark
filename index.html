@@ -399,14 +399,7 @@
         #start-screen .start-btn:active {
             transform: scale(0.97);
         }
-        #start-screen .controls-hint {
-            font-size: clamp(10px, 2.2vw, 15px);
-            color: rgba(180, 210, 240, 0.5);
-            text-align: center;
-            line-height: 1.5;
-            position: relative;
-            z-index: 1;
-        }
+
         @keyframes title-float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-8px); }
@@ -541,10 +534,7 @@
         <div class="title">Голодная Акула</div>
         <div class="subtitle">Стань самым большим хищником океана</div>
         <button class="start-btn" id="start-btn">ИГРАТЬ</button>
-        <div class="controls-hint">
-            🖱️ Мышь — управление на ПК<br>
-            📱 Джойстик — управление на телефоне
-        </div>
+
     </div>
 
     <div id="game-over" onclick="location.reload()">

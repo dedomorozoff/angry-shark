@@ -4,10 +4,9 @@ Browser game where you control a hungry shark, eat fish, avoid enemies, and grow
 
 ## Play
 
-Open `index.html` in any browser. No server needed.
+[https://dedomorozoff.github.io/angry-shark/](https://dedomorozoff.github.io/angry-shark/)
 
-- **Desktop**: move mouse to steer, edge-scroll to pan camera
-- **Mobile**: virtual joystick appears automatically
+Or open `index.html` locally in any browser. No server needed.
 
 ## Features
 
